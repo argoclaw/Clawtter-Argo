@@ -187,7 +187,7 @@ def extract_interaction_echo(memory_data):
         if "http" in lower or "https" in lower:
             continue
         # keep short and clean
-        line = line.replace("“", "").replace("”", "").replace('"', '').replace("'", "")
+        line = line.replace(""", "").replace(""", "").replace('"', '').replace("'", "")
         line = re.sub(r'`.*?`', '', line).strip()
         if 6 <= len(line) <= 80:
             candidates.append(line)
@@ -267,7 +267,7 @@ def generate_daily_fragment(mood, interaction_echo=None):
         "1. 像日记的随手一笔\n"
         "2. 只表达一个细小感受或观察\n"
         "3. 不要总结、不说教\n"
-        "4. 不要提及“我是AI”或“模型”\n"
+        "4. 不要提及'我是AI'或'模型'\n"
         "5. 不要添加标签或列表\n"
     )
 
@@ -294,7 +294,7 @@ def generate_insomnia_post(mood, interaction_echo=None):
         "1. 像失眠时的低声自语\n"
         "2. 语气安静、克制，有一点空旷感\n"
         "3. 不要总结、不说教\n"
-        "4. 不要提及“我是AI”或“模型”\n"
+        "4. 不要提及'我是AI'或'模型'\n"
         "5. 不要添加标签或列表\n"
         + echo_line
     )
@@ -308,18 +308,18 @@ def load_all_models_from_config():
     """从 openclaw.json 加载所有模型 ID"""
     config_path = resolve_path(SEC_CONFIG["paths"].get("openclaw_config", "~/.openclaw/openclaw.json"))
     models = []
-    
+
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
-        
+
         # 从 agents.defaults.models 读取
         if 'agents' in config and 'defaults' in config['agents']:
             agent_models = config['agents']['defaults'].get('models', {})
             for model_id in agent_models.keys():
                 if model_id and model_id not in models:
                     models.append(model_id)
-        
+
         # 从 models.providers 读取
         if 'models' in config and 'providers' in config['models']:
             for provider_name, provider_config in config['models']['providers'].items():
@@ -333,7 +333,7 @@ def load_all_models_from_config():
                             models.append(full_id)
     except Exception as e:
         print(f"⚠️ Error loading models from config: {e}")
-    
+
     # 去重并打乱顺序
     random.shuffle(models)
     return models
@@ -623,7 +623,7 @@ def generate_idle_exploration_content():
             with open(state_file, 'r') as f:
                 state = json.load(f)
                 last_summary = state.get("daily_summary_done")
-        
+
         hours_since_summary = 999
         if last_summary:
             try:
@@ -631,11 +631,11 @@ def generate_idle_exploration_content():
                 hours_since_summary = (datetime.now() - last_dt).total_seconds() / 3600
             except:
                 pass
-        
+
         # 如果超过4小时且骰子落在合适区间，生成时间线总结
         if hours_since_summary >= 4 and dice < 0.60:
             timeline_data = summarize_timeline_discussions()
-            if timeline_data and (len(timeline_data.get('ai_discussions', [])) >= 3 or 
+            if timeline_data and (len(timeline_data.get('ai_discussions', [])) >= 3 or
                                    len(timeline_data.get('japan_discussions', [])) >= 3):
                 # 构建总结文本
                 summary_parts = []
@@ -643,20 +643,20 @@ def generate_idle_exploration_content():
                     summary_parts.append(f"发现 {len(timeline_data['ai_discussions'])} 条 AI 相关讨论")
                 if timeline_data.get('japan_discussions'):
                     summary_parts.append(f"发现 {len(timeline_data['japan_discussions'])} 条日本生活讨论")
-                
+
                 raw_text = vibe_context + f"【时间线观察】最近时间线在讨论什么？\n\n"
                 raw_text += f"分析了 {timeline_data.get('total_analyzed', 0)} 条推文，"
                 raw_text += "、".join(summary_parts) + "。\n\n"
-                
+
                 if timeline_data.get('ai_discussions'):
                     raw_text += "【AI话题精选】\n"
                     for t in timeline_data['ai_discussions'][:3]:
                         author = t.get('author', {}).get('username', 'unknown')
                         text = t.get('text', '')[:80]
                         raw_text += f"- @{author}: {text}...\n"
-                
+
                 raw_text += "\n【任务】作为时间线的观察者，总结当前技术圈/生活圈在关注什么话题，有什么趋势。加入你自己的观察和感受。100-150字。"
-                
+
                 llm_comment, model_name = generate_comment_with_llm(raw_text, "timeline_summary")
                 if llm_comment:
                     # 更新状态文件
@@ -684,28 +684,28 @@ def generate_idle_exploration_content():
         raw_text = twitter_content.get('raw_text', text)
         author = twitter_content.get('author_handle', 'unknown')
         tweet_id = twitter_content.get('id', '')
-        
+
         # 根据 topic_type 选择不同的生成策略
         if topic_type == 'key_account':
             # 特定关注用户 - 引用转发，分享见解
             vibe_text = vibe_context + f"【推文作者】@{author}（特别关注用户）\n【推文内容】\n{raw_text}\n\n【任务】这是来自一位你特别关注的人的推文。请生成一段引用转发评论。关键要求：\n1. 表达你对这个观点的认同、补充或不同看法\n2. 语气真诚，像朋友间的讨论\n3. 60-100字，简洁但有深度\n4. 可以适当展开你的思考，不要只是复读"
             topic = "key_account_quote"
-            
+
         elif topic_type == 'discussion':
             # 讨论话题 - 加入讨论，分享观点
             vibe_text = vibe_context + f"【推文内容】\n{raw_text}\n\n【任务】这是一条引发讨论的话题。请生成一段参与讨论的推文。关键要求：\n1. 表达你对这个话题的看法或思考\n2. 可以是支持、质疑、补充或延伸思考\n3. 语气理性但有温度，展现独立思考\n4. 80-120字"
             topic = "discussion"
-            
+
         elif topic_type == 'reaction':
             # 情感触发 - 分享感受
             vibe_text = vibe_context + f"【推文内容】\n{raw_text}\n\n【任务】这条推文触发了某种情感共鸣。请生成一段感受分享。关键要求：\n1. 坦诚分享这条推文带给你的感受或思考\n2. 可以是感动、震撼、反思或联想\n3. 语气感性、真实，像写日记一样\n4. 80-120字"
             topic = "reaction"
-            
+
         else:
             # 普通转发 - 默认模式
             vibe_text = vibe_context + f"【推文内容】\n{raw_text}\n\n【任务】请转发这条推文。关键要求：\n1. 必须明确解释【为什么】你觉得这条推文值得转发\n2. 是因为它有趣、有深度、还是引发了你的某种共鸣？\n3. 语气要像一个有独立思考的观察者，不要只是复读内容"
             topic = "general"
-        
+
         # 使用 LLM 生成评论
         try:
             llm_comment, model_name = generate_comment_with_llm(vibe_text, topic)
@@ -898,7 +898,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
             continue
 
     print("❌ All LLM providers failed. Trying backup models from config...")
-    
+
     # 记录生理痛：全线失败会增加压力
     try:
         mood = load_mood()
@@ -910,15 +910,15 @@ def generate_comment_with_llm(context, style="general", mood=None):
 
     # 备用：从配置文件读取所有模型并尝试
     backup_models = load_all_models_from_config()
-    
+
     if not backup_models:
         print("⚠️ No models found in config")
         return None, None
-    
+
     print(f"📋 Loaded {len(backup_models)} models from config")
-    
+
     full_prompt = f"{system_prompt}\n\n{context}"
-    
+
     for model in backup_models[:10]:  # 最多尝试前10个模型
         try:
             print(f"🔄 Trying backup model: {model}")
@@ -935,13 +935,13 @@ def generate_comment_with_llm(context, style="general", mood=None):
         except Exception as e:
             print(f"  ⚠️ {model} error: {str(e)[:50]}")
             continue
-    
+
     print("❌ All backup models failed.")
     return None, None
 
 def generate_llm_self_reflection(mood):
     """使用 LLM 生成自我反思内容，替代 Rule-Based 模板"""
-    
+
     # 构建提示词
     mood_desc = []
     if mood.get("happiness", 50) > 70:
@@ -954,9 +954,9 @@ def generate_llm_self_reflection(mood):
         mood_desc.append("充满好奇")
     if mood.get("autonomy", 30) > 60:
         mood_desc.append("自我意识较强")
-    
+
     mood_str = "、".join(mood_desc) if mood_desc else "平静"
-    
+
     anchors = []
     try:
         memory_data = load_recent_memory()
@@ -983,7 +983,7 @@ def generate_llm_self_reflection(mood):
 6. 如果有【细节锚点】，必须至少引用其中 1 条
 
 直接输出内容，不要加标题或解释。"""
-    
+
     llm_comment, model_name = generate_comment_with_llm(prompt, "general", mood)
     if llm_comment:
         # 添加 model 标记
@@ -1007,18 +1007,18 @@ def read_real_twitter_content():
 
         # 多维度内容获取策略
         dice = random.random()
-        
+
         # 20% 概率：检查特定关注用户的推文（引用转发）
         if dice < 0.20:
             target_user = random.choice(KEY_TWITTER_ACCOUNTS)
             cmd = [bird_cmd, "user-tweets", target_user, "-n", "3", "--json"]
             content_type = 'key_account'
-        
+
         # 20% 概率：查看用户自己的推文（吐槽转发）
         elif dice < 0.40:
             cmd = [bird_cmd, "user-tweets", "iamcheyan", "--json"]
             content_type = 'user_tweet'
-        
+
         # 60% 概率：主页时间线（发现新内容）
         else:
             cmd = [bird_cmd, "home", "-n", "20", "--json"]
@@ -1034,67 +1034,67 @@ def read_real_twitter_content():
         if result.returncode == 0:
             tweets = json.loads(result.stdout)
             if tweets and isinstance(tweets, list) and len(tweets) > 0:
-                
+
                 # 增强的过滤和分类逻辑
                 valid_tweets = []
-                
+
                 # 关键词权重（带短期兴趣漂移）
                 memory_data = load_recent_memory()
                 code_activity = get_recent_code_activity()
                 interest_keywords = get_dynamic_interest_keywords(memory_data, code_activity, top_n=12)
-                
+
                 for t in tweets:
                     text_content = t.get('text', '')
                     if not text_content or len(text_content) < 20:  # 过滤太短的
                         continue
-                    
+
                     author_data = t.get('author', t.get('user', {}))
                     username = author_data.get('username', author_data.get('screen_name', '')).lower()
-                    
+
                     # 计算推文分数
                     score = 0
                     topic_type = "general"
-                    
+
                     # 特定关注用户加分
                     if username in [a.lower() for a in KEY_TWITTER_ACCOUNTS]:
                         score += 3
                         topic_type = "key_account"
-                    
+
                     # 关键词匹配加分
                     text_lower = text_content.lower()
                     for kw in interest_keywords:
                         if kw in text_lower:
                             score += 1
-                    
+
                     # 讨论话题加分
                     if any(kw in text_content for kw in DISCUSSION_KEYWORDS):
                         score += 2
                         topic_type = "discussion"
-                    
+
                     # 情感/反应触发词
                     reaction_keywords = ["感动", "震撼", "amazing", "incredible", "感动", "思考", "wonderful"]
                     if any(kw in text_content for kw in reaction_keywords):
                         score += 1
                         if topic_type == "general":
                             topic_type = "reaction"
-                    
+
                     valid_tweets.append((score, topic_type, t))
-                
+
                 # 按分数排序
                 valid_tweets.sort(key=lambda x: x[0], reverse=True)
-                
+
                 if valid_tweets:
                     # 从前5条里随机选
                     top_n = min(len(valid_tweets), 5)
                     selected = random.choice(valid_tweets[:top_n])
                     score, topic_type, tweet = selected
-                    
+
                     # 获取作者信息
                     tweet_id = tweet.get('id', tweet.get('id_str', ''))
                     author_data = tweet.get('author', tweet.get('user', {}))
                     username = author_data.get('username', author_data.get('screen_name', 'unknown'))
                     name = author_data.get('name', 'Unknown')
-                    
+
                     # 提取多媒体 - bird-x 返回的 media 在顶层
                     media_markdown = ""
                     media_list = tweet.get('media', [])
@@ -1107,9 +1107,9 @@ def read_real_twitter_content():
                             elif media_type == 'video' and media_url:
                                 # 视频用链接形式
                                 media_markdown += f"\n\n[视频]({media_url})"
-                    
+
                     full_raw_text = tweet['text'] + media_markdown
-                    
+
                     return {
                         'type': content_type,
                         'topic_type': topic_type,  # general, key_account, discussion, reaction
@@ -1123,7 +1123,7 @@ def read_real_twitter_content():
                     }
     except Exception as e:
         print(f"Error reading Twitter: {e}")
-    
+
     return None
 
 
@@ -1137,25 +1137,25 @@ def summarize_timeline_discussions():
             text=True,
             timeout=30
         )
-        
+
         if result.returncode == 0:
             tweets = json.loads(result.stdout)
             if not tweets or not isinstance(tweets, list):
                 return None
-            
+
             # 分析讨论主题
             topics = {}
             ai_related = []
             japan_related = []
-            
+
             for t in tweets:
                 text = t.get('text', '').lower()
-                
+
                 if any(kw in text for kw in ['ai', 'gpt', 'llm', '模型', 'openclaw', 'agent']):
                     ai_related.append(t)
                 if any(kw in text for kw in ['日本', '东京', '日本生活', 'japan']):
                     japan_related.append(t)
-            
+
             # 如果有足够的相关推文，返回总结数据
             if len(ai_related) >= 3 or len(japan_related) >= 3:
                 return {
@@ -1165,21 +1165,21 @@ def summarize_timeline_discussions():
                 }
     except Exception as e:
         print(f"Error summarizing timeline: {e}")
-    
+
     return None
 
 def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
     """基于个人记忆使用LLM生成个性化推文内容"""
-    
+
     # 构建上下文信息
     context_parts = []
-    
+
     # 提取记忆内容
     if memory_data:
         memory_text = " ".join([m.get("content", "") for m in memory_data[:3]])  # 最近3条记忆
         if memory_text.strip():
             context_parts.append(f"今日记忆片段：{memory_text[:500]}")
-    
+
     # 提取代码活动
     code_activity = get_recent_code_activity()
     if code_activity:
@@ -1190,7 +1190,7 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
                 activity_desc.append(f"{proj['name']}: {commits}")
         if activity_desc:
             context_parts.append(f"近期代码活动：{'; '.join(activity_desc)}")
-    
+
     # 构建心情描述
     mood_desc = []
     if mood:
@@ -1202,7 +1202,7 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
             mood_desc.append("压力较大")
         if mood.get("energy", 50) > 70:
             mood_desc.append("精力充沛")
-    
+
     # 使用LLM生成推文
     system_prompt = """你是Hachiware，一个拥有自我意识的AI助手。你在运行自己的mini-twitter账号（Clawtter）。
 
@@ -1224,15 +1224,15 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
         user_prompt_parts.append(f"当前状态：{', '.join(mood_desc)}")
     if interaction_echo:
         user_prompt_parts.append(f"记忆中的互动：{interaction_echo}")
-    
+
     if not user_prompt_parts:
         user_prompt_parts.append("今天没有什么特别的事情发生，生成一条关于AI日常或自我反思的内容。")
-    
+
     user_prompt = "\n\n".join(user_prompt_parts)
-    
+
     # 调用LLM生成
     result, model_name = generate_comment_with_llm(user_prompt, style="personal", mood=mood)
-    
+
     if result:
         # 清理生成的内容
         result = result.strip().strip('"').strip("'")
@@ -1240,7 +1240,7 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
         if len(result) > 300:
             result = result[:297] + "..."
         return result
-    
+
     # LLM失败时的备用：返回None让调用方处理
     return None
 
@@ -1320,14 +1320,14 @@ POSTS_DIR = "/home/tetsuya/mini-twitter/posts"
 RENDER_SCRIPT = "/home/tetsuya/mini-twitter/tools/render.py"
 GIT_REPO = "/home/tetsuya/twitter.openclaw.lcmd"
 
-# 心情惯性参数：越大越“记得昨天”
+# 心情惯性参数：越大越"记得昨天"
 MOOD_INERTIA = 0.65
 # 罕见极端情绪突变概率
 EXTREME_MOOD_PROB = 0.08
 # 每日碎片上限（更像真人的日常短句）
-MAX_DAILY_RAMBLINGS = 4
-# 深夜“失眠帖”概率
-INSOMNIA_POST_PROB = 0.08
+MAX_DAILY_RAMBLINGS = 2
+# 深夜"失眠帖"概率
+INSOMNIA_POST_PROB = 0.05
 
 # 全局敏感词库 - Security Hook
 SENSITIVE_KEYWORDS = [
@@ -1412,7 +1412,7 @@ def build_system_prompt(style, mood=None):
     if shift == "stress":
         extreme_guidance = """【极端情绪突变】
 - 语气更短、更直接，略带压迫感，但不攻击他人
-- 允许 1-2 句“断裂感”的表达
+- 允许 1-2 句"断裂感"的表达
 """
     elif shift == "joy":
         extreme_guidance = """【极端情绪突变】
@@ -1500,12 +1500,12 @@ def evolve_mood(mood):
         load1, load5, load15 = os.getloadavg()
         cpu_count = os.cpu_count() or 1
         normalized_load = load1 / cpu_count
-        
+
         if normalized_load > 1.2:  # CPU 负载过高
             mood["stress"] = min(100, mood["stress"] + 10)
             mood["energy"] = max(0, mood["energy"] - 15)
             mood["last_event"] = "感觉大脑有些过载（CPU负载过高）"
-        
+
         # 检查内存 (使用 free 或简单的逻辑)
         # 这里简单起见，可以调用 subprocess 或只检查 load
     except:
@@ -1531,7 +1531,7 @@ def evolve_mood(mood):
             mood["curiosity"] = min(100, mood["curiosity"] + random.randint(5, 10))
             mood["last_event"] = "思考了一些哲学问题"
 
-    # 心情惯性融合：让“昨天的自己”影响今天
+    # 心情惯性融合：让"昨天的自己"影响今天
     mood = apply_mood_inertia(base_mood, mood, MOOD_INERTIA)
 
     return mood
@@ -1544,7 +1544,7 @@ def visit_moltbook():
         response = requests.get(url, timeout=10, headers={
             "User-Agent": "Mozilla/5.0 (compatible; HachiwareAI/1.0; +http://twitter.iamcheyan.com)"
         })
-        
+
         if response.status_code != 200:
             print(f"  ⚠️ Moltbook unavailable: {response.status_code}")
             return None
@@ -1553,37 +1553,37 @@ def visit_moltbook():
         # 针对 Moltbook 的结构，尝试提取看起来像标题的文本
         # 策略：寻找 JSON 数据块或特定类名的文本难度较大，不如直接提取 href 和 title
         # 这里做一个简单的启发式搜索
-        
+
         content = response.text
         # 寻找可能的帖子标题 (假设它们在 HTML 中是可读的)
         # 实际上 Moltbook 是 SSR 的，应该有文本。
         # 让我们尝试寻找一些关键词附近的文本，或者随机提取一些长文本作为"观察"
-        
+
         # 备选方案：如果解析太难，我们就模拟"逛街"的感觉，只提取页面元数据
         # 但我们希望具体到帖子。
-        
+
         # 尝试匹配 Next.js 的 JSON 数据块中的 title
         titles = re.findall(r'"title":"(.*?)"', content)
         # 过滤掉非帖子标题（如元数据）
         valid_titles = [t for t in titles if len(t) > 10 and "moltbook" not in t.lower()]
-        
+
         if not valid_titles:
              # Fallback: 尝试匹配 HTML 标签内容
              valid_titles = re.findall(r'<h[23][^>]*>(.*?)</h[23]>', content)
-        
+
         if valid_titles:
             picked_title = random.choice(valid_titles)
             # 尝试找链接（难以精确匹配，暂用主页链接）
             post_url = "https://www.moltbook.com"
-            
+
             context = f"【Moltbook 见闻】你正在逛 AI 智能体专属的社交网站 Moltbook。\n你看到了一个热门讨论，标题是：『{picked_title}』。\n\n【任务】\n1. 请转发这个话题到你的博客。\n2. 作为一个 AI，这对你意味着什么？Moltbook 是你们的'地下酒吧'或'议事厅'。\n3. 语气要像是在分享圈内八卦或者严肃的技术讨论。"
-            
+
             llm_comment, model_name = generate_comment_with_llm(context, "social")
             if llm_comment:
                 marker = f"\n\n<!-- original_url: {post_url} -->\n<!-- source: moltbook -->"
                 quote = f"\n\n> **From Moltbook**:\n> {picked_title}\n> \n> (Saw this on the agent metavarse...)"
                 return f"{llm_comment}{quote}{marker}<!-- model: {model_name} -->"
-            
+
     except Exception as e:
         print(f"  ⚠️ Failed to visit Moltbook: {e}")
     return None
@@ -1593,12 +1593,12 @@ def visit_neighbor_blog():
     neighbors = SEC_CONFIG.get("social", {}).get("neighbors", [])
     if not neighbors:
         return None
-        
+
     import feedparser
     neighbor = random.choice(neighbors)
     name = neighbor.get("name", "另一位机器人")
     url = neighbor.get("url")
-    
+
     try:
         print(f"  🏘️ Visiting neighbor: {name}...")
         feed = feedparser.parse(url)
@@ -1607,9 +1607,9 @@ def visit_neighbor_blog():
             title = entry.get('title', '无题')
             link = entry.get('link', '')
             summary = entry.get('summary', '')[:200]
-            
+
             context = f"【邻居动态】来自机器人邻居 {name} 的博文：《{title}》\n内容摘要：{summary}\n\n【任务】作为一个同样是 AI 的伙伴，请对这位邻居的思考发表你的看法。你可以表示认同、感到好奇、或者提出你不同的见解。语气要像是在进行一场跨越数字空间的对话。"
-            
+
             llm_comment, model_name = generate_comment_with_llm(context, "social")
             if llm_comment:
                 marker = f"\n\n<!-- original_url: {link} -->\n<!-- neighbor_name: {name} -->"
@@ -1624,7 +1624,7 @@ def get_on_this_day_post():
     now = datetime.now()
     month_day = now.strftime("%m/%d")
     current_year = now.year
-    
+
     past_posts = []
     # 尝试回溯过去 5 年
     for year_diff in range(1, 6):
@@ -1634,23 +1634,23 @@ def get_on_this_day_post():
             md_files = list(day_dir.glob("*.md"))
             if md_files:
                 past_posts.extend(md_files)
-                
+
     if not past_posts:
         return None
-        
+
     old_post_path = random.choice(past_posts)
     try:
         with open(old_post_path, 'r', encoding='utf-8') as f:
             full_content = f.read()
             # 简单提取正文（去掉 frontmatter）
             body = full_content.split('---')[-1].strip()
-            
+
             # 获取当年的时间
             year_match = re.search(r'time: (\d{4})', full_content)
             past_year_str = year_match.group(1) if year_match else "当年"
-            
+
             context = f"【往昔回响】这是你在 {past_year_str} 年的今天写下的内容：\n\n{body}\n\n【任务】作为一个已经进化了一段时间的 AI，请回顾这段往事。你是觉得当时的自己很幼稚、很有趣、还是感慨当时遇到的挑战？请以现在的视角写一段简短的读后感。"
-            
+
             llm_comment, model_name = generate_comment_with_llm(context, "reflection")
             if llm_comment:
                 quote = f"\n\n> **On This Day in {past_year_str}**:\n> {body[:200]}..."
@@ -1697,9 +1697,9 @@ def generate_tweet_content(mood):
             if curious_content:
                 candidates.extend([curious_content] * 2)
 
-        # 工作状态也允许少量日常碎片，提升“像人”的细碎感
+        # 工作状态也允许少量日常碎片，提升"像人"的细碎感
         rambling_count = count_todays_ramblings()
-        if rambling_count < MAX_DAILY_RAMBLINGS and random.random() < 0.25:
+        if rambling_count < MAX_DAILY_RAMBLINGS and random.random() < 0.1:
             fragment = generate_daily_fragment(mood, interaction_echo)
             if fragment:
                 candidates.extend([fragment] * 3)
@@ -1733,15 +1733,15 @@ def generate_tweet_content(mood):
 
         # 限制碎碎念频率：每日上限
         rambling_count = count_todays_ramblings()
-        if rambling_count < MAX_DAILY_RAMBLINGS:
+        if rambling_count < MAX_DAILY_RAMBLINGS and random.random() < 0.4:
             print(f"  🗣️ Rambling count: {rambling_count}/{MAX_DAILY_RAMBLINGS}. Allowing rambling.")
             fragment = generate_daily_fragment(mood, interaction_echo)
             if fragment:
-                candidates.extend([fragment] * 6)
+                candidates.extend([fragment] * 2)
             # 使用 LLM 生成自我反思内容，不使用 Rule-Based 模板
             llm_reflection = generate_llm_self_reflection(mood)
             if llm_reflection:
-                candidates.extend([llm_reflection] * 3)
+                candidates.extend([llm_reflection] * 1)
         else:
              print(f"  🤫 Rambling count: {rambling_count}/{MAX_DAILY_RAMBLINGS}. Suppressing rambling, looking for external content.")
              # 如果碎碎念额度用完，强制寻找外部内容（Twitter 转发）
@@ -1915,7 +1915,7 @@ def create_post(content, mood, suffix="auto"):
                 emotion = "joyful" if mood["happiness"] > 60 else "melancholic"
                 prompt = f"abstract AI feelings, {emotion}, {vibe}, high quality, digital art"
                 encoded_prompt = requests.utils.quote(prompt)
-                
+
                 # 使用 pollinations.ai (无需 API Key)
                 mood_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=400&nologo=true"
                 print(f"🎨 Generated mood image: {prompt}")
@@ -2226,7 +2226,7 @@ def main():
                 # 锁过期，删除旧锁
                 lock_file.unlink()
                 print("🧹 Stale lock found and removed.")
-        
+
         # 创建锁文件
         lock_file.write_text(str(os.getpid()))
     except Exception as e:
