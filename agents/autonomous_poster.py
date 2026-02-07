@@ -36,6 +36,27 @@ INTEREST_MIN = 0.5
 def _normalize_interest_list(items):
     return [i.strip().lower() for i in items if isinstance(i, str) and i.strip()]
 
+def localize_twitter_date(date_str):
+    """
+    将 Twitter 原生的 UTC 时间字符串转换为东京本地时间 (+0900)
+    输入格式: "Sat Feb 07 08:59:17 +0000 2026"
+    输出格式: "Sat Feb 07 17:59:17 +0900 2026"
+    """
+    if not date_str:
+        return ""
+    from datetime import datetime, timezone, timedelta
+    try:
+        # Twitter 格式: "Sat Feb 07 08:59:17 +0000 2026"
+        # 使用 %z 自动解析 +0000 这种时区偏移
+        dt_utc = datetime.strptime(date_str, "%a %b %d %H:%M:%S %z %Y")
+        # 转换为本地时间 (JST, +0900)
+        dt_jst = dt_utc.astimezone(timezone(timedelta(hours=9)))
+        # 返回格式化后的字符串，此时 %z 会变成 +0900
+        return dt_jst.strftime("%a %b %d %H:%M:%S %z %Y")
+    except Exception as e:
+        print(f"Date conversion failed: {e}")
+        return date_str
+
 def load_interest_state():
     base_interests = _normalize_interest_list(SEC_CONFIG.get("interests", []))
     state = {
@@ -699,8 +720,7 @@ def generate_idle_exploration_content():
 
         comment = llm_comment
 
-        # 添加引用来源
-        date_val = twitter_content.get('created_at', '')
+        date_val = localize_twitter_date(twitter_content.get('created_at', ''))
         tweet_url = f"https://x.com/{author}/status/{tweet_id}"
         marker = f"\n\n<!-- original_time: {date_val} -->" if date_val else ""
         marker += f"\n<!-- original_url: {tweet_url} -->"
@@ -1775,7 +1795,7 @@ def generate_tweet_content(mood):
 
              author = twitter_content.get('author_handle', 'unknown')
              tweet_id = twitter_content.get('id', '')
-             date_val = twitter_content.get('created_at', '')
+             date_val = localize_twitter_date(twitter_content.get('created_at', ''))
              tweet_url = f"https://x.com/{author}/status/{tweet_id}"
              marker = f"\n\n<!-- original_time: {date_val} -->" if date_val else ""
              marker += f"\n<!-- original_url: {tweet_url} -->"
