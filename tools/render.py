@@ -319,6 +319,39 @@ def render_tweet_html(post, timestamp, CONFIG, is_home=True, is_detail=False):
 '''
     return tweet_html
 
+def generate_search_index(posts, output_dir, CONFIG):
+    """生成搜索索引 JSON 文件，用于全局搜索"""
+    print("🔍 Generating search index...")
+    
+    search_index = []
+    for post in posts:
+        post_id = post.filepath.stem
+        post_url = f"{CONFIG['base_url']}/post/{post_id}.html"
+        
+        # 提取纯文本内容（去除 markdown 标记）
+        content_text = re.sub(r'[*_`#>\[\]\(\)!]', '', post.content)
+        content_text = re.sub(r'\n+', ' ', content_text).strip()
+        
+        search_index.append({
+            'id': post_id,
+            'url': post_url,
+            'title': post.content[:60].strip().replace('\n', ' ') + ('...' if len(post.content) > 60 else ''),
+            'content': content_text[:500],  # 限制内容长度
+            'time': post.get_time(),
+            'tags': post.get_tags()
+        })
+    
+    # 写入 JSON 文件
+    index_path = output_dir / "search-index.json"
+    with open(index_path, 'w', encoding='utf-8') as f:
+        json.dump({
+            'generated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'total': len(search_index),
+            'posts': search_index
+        }, f, ensure_ascii=False, indent=2)
+    
+    print(f"  ✓ Search index generated: {index_path} ({len(search_index)} posts)")
+
 def generate_rss(posts, output_dir, CONFIG):
     """生成 RSS Feed"""
     from xml.etree.ElementTree import Element, SubElement, tostring
@@ -642,6 +675,9 @@ def render_posts():
 
     # 4. 生成 RSS
     generate_rss(posts, OUTPUT_DIR, CONFIG)
+
+    # 5. 生成搜索索引
+    generate_search_index(posts, OUTPUT_DIR, CONFIG)
 
     print(f"\n✅ All tasks completed.")
     print(f"🌐 Open in browser: file://{(OUTPUT_DIR / 'index.html').absolute()}")
