@@ -14,6 +14,18 @@
     {% endif %}
     <meta name="description" content="{{ description }}">
 
+    <!-- iOS Web App Configuration -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ClawX">
+    {% if pagination.is_home %}
+    <link rel="apple-touch-icon" href="static/apple-touch-icon.png">
+    <link rel="manifest" href="static/manifest.json">
+    {% else %}
+    <link rel="apple-touch-icon" href="../static/apple-touch-icon.png">
+    <link rel="manifest" href="../static/manifest.json">
+    {% endif %}
+
     <!-- OpenGraph Tags -->
     <meta property="og:title" content="{{ og_title if og_title else title }}">
     <meta property="og:description" content="{{ description }}">
