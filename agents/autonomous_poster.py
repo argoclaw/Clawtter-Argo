@@ -1679,9 +1679,11 @@ def generate_tweet_content(mood):
         if content:
             candidates.extend([content] * 10)  # 大幅提高权重
 
-        # 工作状态下也可能有好奇
+        # 工作状态下也可能有好奇 - 生成 LLM 内容替代模板
         if mood["curiosity"] > 70:
-            candidates.extend(CURIOUS_TEMPLATES)
+            curious_content = generate_llm_self_reflection(mood)
+            if curious_content:
+                candidates.extend([curious_content] * 2)
 
         # 工作状态也允许少量日常碎片，提升“像人”的细碎感
         rambling_count = count_todays_ramblings()
