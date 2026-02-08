@@ -16,6 +16,7 @@
             --text: #e0e0e0;
             --text-dim: #888;
             --safe: #00ff88;
+            --info: #00b8ff;
         }
 
         body {
@@ -28,12 +29,13 @@
             align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
+            padding: 20px 0;
         }
 
         .container {
-            width: 90%;
+            width: 95%;
             max-width: 800px;
-            padding: 40px;
+            padding: 30px;
             background: var(--card-bg);
             border-radius: 24px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
@@ -43,8 +45,8 @@
 
         h1 {
             font-weight: 600;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2.2rem;
+            margin: 0 0 5px 0;
             background: linear-gradient(90deg, #ff3e3e, #ff8e8e);
             -webkit-background-clip: text;
             background-clip: text;
@@ -55,30 +57,59 @@
         p.subtitle {
             text-align: center;
             color: var(--text-dim);
-            margin-bottom: 40px;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+        }
+
+        .quick-actions {
+            margin-bottom: 25px;
+        }
+
+        button.quick-rescue {
+            background: linear-gradient(135deg, var(--safe), var(--info));
+            width: 100%;
+            padding: 22px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+            border-radius: 16px;
+            border: none;
+            color: #000;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        button.quick-rescue:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 255, 136, 0.3);
         }
 
         .model-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 25px;
         }
 
         .model-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 16px;
+            padding: 12px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease-out;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 60px;
+            justify-content: center;
         }
 
         .model-card:hover {
             background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-5px);
             border-color: var(--accent);
         }
 
@@ -88,56 +119,53 @@
             box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
         }
 
+        .model-card.selected {
+            border-color: var(--accent);
+            background: rgba(255, 62, 62, 0.1);
+        }
+
         .provider-badge {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             text-transform: uppercase;
             color: var(--accent);
-            letter-spacing: 1px;
-            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
             display: block;
+            opacity: 0.8;
         }
 
         .model-name {
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 0.85rem;
             display: block;
+            line-height: 1.2;
+            word-break: break-word;
         }
 
         .actions {
-            margin-top: 40px;
+            margin-top: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
 
-        button {
+        .btn-main {
             background: var(--accent);
             color: white;
             border: none;
             padding: 18px;
             border-radius: 12px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             box-shadow: 0 10px 20px rgba(255, 62, 62, 0.2);
         }
 
-        button:hover {
-            transform: scale(1.02);
+        .btn-main:hover {
             filter: brightness(1.1);
-        }
-
-        button:active {
-            transform: scale(0.98);
-        }
-
-        button.secondary {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: none;
-            color: var(--text-dim);
+            transform: translateY(-2px);
         }
 
         #status-bar {
@@ -145,20 +173,22 @@
             padding: 15px;
             border-radius: 10px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: none;
             text-align: center;
+            line-height: 1.4;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .loading-ring {
             display: none;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
+            border-top-color: var(--safe);
+            animation: spin 0.8s linear infinite;
+            margin: 20px auto;
         }
 
         @keyframes spin {
@@ -170,11 +200,16 @@
         /* Mobile tweaks */
         @media (max-width: 600px) {
             .container {
-                padding: 20px;
+                padding: 15px;
             }
 
             h1 {
                 font-size: 1.8rem;
+            }
+
+            .model-grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 8px;
             }
         }
     </style>
@@ -185,15 +220,16 @@
         <h1>Claw Rescue System</h1>
         <p class="subtitle">紧急状态：一键切换模型并强制重置所有活跃会话</p>
 
+        <div class="quick-actions">
+            <button id="btn-quick" class="quick-rescue">⚡ 闪电救灾 (随机切换)</button>
+        </div>
+
         <div id="model-list" class="model-grid">
-            <!-- Loading placeholder -->
-            <div style="text-align: center; grid-column: 1/-1; padding: 40px;">
-                正在加载可用模型...
-            </div>
+            <div style="text-align: center; grid-column: 1/-1; padding: 40px;">加载中...</div>
         </div>
 
         <div class="actions">
-            <button id="btn-deploy">🚀 部署切换并重置会话</button>
+            <button id="btn-deploy" class="btn-main">🚀 部署所选模型并重置</button>
             <div class="loading-ring" id="loader"></div>
             <div id="status-bar"></div>
         </div>
@@ -201,70 +237,99 @@
 
     <script>
         let selectedModel = null;
+        let allModels = [];
+        let isProcessing = false;
 
         async function loadModels() {
             try {
                 const res = await fetch('/api/rescue/models');
                 const data = await res.json();
+                allModels = data.models;
                 const container = document.getElementById('model-list');
                 container.innerHTML = '';
 
-                data.models.forEach(m => {
+                allModels.forEach(m => {
                     const card = document.createElement('div');
-                    card.className = `model-card ${data.primary === m.full_id ? 'active' : ''}`;
+                    const isActive = data.primary === m.full_id;
+                    card.className = `model-card ${isActive ? 'active' : ''}`;
+                    card.dataset.id = m.full_id;
                     card.innerHTML = `
                         <span class="provider-badge">${m.provider}</span>
                         <span class="model-name">${m.name}</span>
                     `;
                     card.onclick = () => {
-                        document.querySelectorAll('.model-card').forEach(c => c.style.borderColor = '');
-                        card.style.borderColor = 'var(--accent)';
+                        if (isProcessing) return;
+                        document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
                         selectedModel = m.full_id;
                     };
                     container.appendChild(card);
-                    if (data.primary === m.full_id) selectedModel = m.full_id;
+                    if (isActive) {
+                        selectedModel = m.full_id;
+                    }
                 });
             } catch (e) {
-                alert('无法加载模型列表，请确保后端 API 正在运行');
+                console.error(e);
+                alert('无法加载模型列表');
             }
         }
 
-        document.getElementById('btn-deploy').onclick = async () => {
-            if (!selectedModel) return alert('请先选择一个模型');
+        async function executeRescue(targetId, isQuick = false) {
+            if (isProcessing) return;
+            isProcessing = true;
 
-            const btn = document.getElementById('btn-deploy');
             const loader = document.getElementById('loader');
             const status = document.getElementById('status-bar');
+            const btns = [document.getElementById('btn-deploy'), document.getElementById('btn-quick')];
 
-            if (!confirm(`确定要强制切换到 ${selectedModel} 并重置所有会话锁定吗？`)) return;
+            if (!isQuick && !confirm(`确定要强制重置并切换到 ${targetId} 吗？`)) {
+                isProcessing = false;
+                return;
+            }
 
-            btn.style.display = 'none';
+            btns.forEach(b => b.style.opacity = '0.3');
             loader.style.display = 'block';
             status.style.display = 'block';
+            status.style.color = 'var(--text)';
             status.style.background = 'rgba(255,255,255,0.05)';
-            status.innerText = '⚙️ 正在执行：修改配置 -> 重置会话 -> 重启服务...';
+            status.innerText = `⚙️ 正在执行${isQuick ? '[闪电模式]' : ''}：\n目标: ${targetId}\n状态: 配置中...`;
 
             try {
                 const res = await fetch('/api/rescue/switch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: selectedModel })
+                    body: JSON.stringify({ model: targetId })
                 });
                 const result = await res.json();
 
                 if (result.success) {
                     status.style.color = 'var(--safe)';
-                    status.innerText = '✅ 修复成功！OpenClaw 已重启，所有会话已解锁。';
+                    status.innerText = `✅ 已经成功切换到 ${targetId}！\n系统已重启，所有会话已强制解锁。`;
+                    setTimeout(loadModels, 2000);
                 } else {
                     throw new Error(result.error);
                 }
             } catch (e) {
                 status.style.color = 'var(--accent)';
-                status.innerText = '❌ 错误: ' + e.message;
+                status.innerText = '❌ 执行失败: ' + e.message;
             } finally {
                 loader.style.display = 'none';
-                setTimeout(() => { btn.style.display = 'block'; }, 3000);
+                isProcessing = false;
+                setTimeout(() => {
+                    btns.forEach(b => b.style.opacity = '1');
+                }, 1000);
             }
+        }
+
+        document.getElementById('btn-deploy').onclick = () => executeRescue(selectedModel);
+
+        document.getElementById('btn-quick').onclick = () => {
+            if (isProcessing) return;
+            // Filter out current selected if possible, but keep it simple: random from all
+            const available = allModels.filter(m => m.full_id !== selectedModel);
+            const pool = available.length > 0 ? available : allModels;
+            const randomModel = pool[Math.floor(Math.random() * pool.length)];
+            executeRescue(randomModel.full_id, true);
         };
 
         loadModels();
