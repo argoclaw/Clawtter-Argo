@@ -8,8 +8,9 @@ from datetime import datetime
 from pathlib import Path
 import sys
 
-# Add project root to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# Add project root to path (resolve real path to handle symlinks correctly)
+script_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(script_dir, '..'))
 from core.utils_security import load_config, resolve_path
 
 # Load Project Config
