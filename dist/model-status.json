@@ -1,94 +1,38 @@
 {
-  "generated_at": "2026-02-09 23:31:05",
+  "generated_at": "2026-02-10 00:00:30",
   "summary": {
-    "passed": 14,
-    "failed": 0,
+    "passed": 6,
+    "failed": 8,
     "total": 14
   },
   "results": [
     {
-      "provider": "_disabled_LCMD",
-      "model": "gemini-claude-sonnet-4-5",
-      "success": true,
-      "status": "OK (Spawn 3.4s)",
-      "response": "CLI responded"
-    },
-    {
-      "provider": "_disabled_kimi",
-      "model": "moonshot-v1-32k",
-      "success": true,
-      "status": "OK (Spawn 2.4s)",
-      "response": "CLI responded"
-    },
-    {
-      "provider": "_disabled_kimi",
-      "model": "moonshot-v1-8k",
-      "success": true,
-      "status": "OK (Spawn 19.4s)",
-      "response": "CLI responded"
-    },
-    {
-      "provider": "_disabled_openrouter",
-      "model": "moonshotai/kimi-k2.5",
-      "success": true,
-      "status": "OK (Spawn 19.7s)",
-      "response": "CLI responded"
-    },
-    {
       "provider": "google",
       "model": "gemini-2.5-flash",
       "success": true,
-      "status": "OK (1.19s)",
+      "status": "OK (1.57s)",
       "response": "Response matched but unexpected format"
     },
     {
       "provider": "google",
       "model": "gemini-2.5-pro",
       "success": true,
-      "status": "OK (1.86s)",
+      "status": "OK (1.68s)",
       "response": "Response matched but unexpected format"
     },
     {
       "provider": "google-alt",
       "model": "gemini-2.5-flash",
       "success": true,
-      "status": "OK (1.12s)",
+      "status": "OK (0.94s)",
       "response": "Response matched but unexpected format"
     },
     {
       "provider": "nvidia",
       "model": "qwen/qwen2.5-coder-32b-instruct",
       "success": true,
-      "status": "OK (0.28s)",
+      "status": "OK (0.57s)",
       "response": "Hello! How can I assist you today?"
-    },
-    {
-      "provider": "nvidia-kimi",
-      "model": "moonshotai/kimi-k2.5",
-      "success": true,
-      "status": "OK (Spawn 14.6s)",
-      "response": "CLI responded"
-    },
-    {
-      "provider": "openai-codex",
-      "model": "gpt-5.1",
-      "success": true,
-      "status": "OK (Spawn 20.8s)",
-      "response": "CLI responded"
-    },
-    {
-      "provider": "opencode",
-      "model": "big-pickle",
-      "success": true,
-      "status": "OK (Spawn 20.9s)",
-      "response": "CLI responded"
-    },
-    {
-      "provider": "opencode",
-      "model": "glm-4.7-free",
-      "success": true,
-      "status": "OK (Spawn 3.7s)",
-      "response": "CLI responded"
     },
     {
       "provider": "qwen-portal",
@@ -103,6 +47,62 @@
       "success": true,
       "status": "OAUTH MODE",
       "response": "Managed by OpenClaw"
+    },
+    {
+      "provider": "_disabled_LCMD",
+      "model": "gemini-claude-sonnet-4-5",
+      "success": false,
+      "status": "Spawn CLI Err",
+      "response": "[Errno 2] No such file or directory: 'openclaw'"
+    },
+    {
+      "provider": "_disabled_kimi",
+      "model": "moonshot-v1-32k",
+      "success": false,
+      "status": "Err 401",
+      "response": "{\"error\":{\"message\":\"Invalid Authentication\",\"type\":\"invalid"
+    },
+    {
+      "provider": "_disabled_kimi",
+      "model": "moonshot-v1-8k",
+      "success": false,
+      "status": "Err 401",
+      "response": "{\"error\":{\"message\":\"Invalid Authentication\",\"type\":\"invalid"
+    },
+    {
+      "provider": "_disabled_openrouter",
+      "model": "moonshotai/kimi-k2.5",
+      "success": false,
+      "status": "Err 401",
+      "response": "{\"error\":{\"message\":\"User not found.\",\"code\":401}}"
+    },
+    {
+      "provider": "nvidia-kimi",
+      "model": "moonshotai/kimi-k2.5",
+      "success": false,
+      "status": "HTTP Timeout",
+      "response": "HTTPSConnectionPool(host='integrate.api.nvidia.com', port=44"
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.1",
+      "success": false,
+      "status": "Err 401",
+      "response": "{     \"error\": {         \"message\": \"Incorrect API key provi"
+    },
+    {
+      "provider": "opencode",
+      "model": "big-pickle",
+      "success": false,
+      "status": "Spawn CLI Err",
+      "response": "[Errno 2] No such file or directory: 'openclaw'"
+    },
+    {
+      "provider": "opencode",
+      "model": "glm-4.7-free",
+      "success": false,
+      "status": "Spawn CLI Err",
+      "response": "[Errno 2] No such file or directory: 'openclaw'"
     }
   ]
 }
