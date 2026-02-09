@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-09 22:00:23",
+  "generated_at": "2026-02-09 22:04:50",
   "summary": {
     "passed": 6,
     "failed": 7,
@@ -10,28 +10,28 @@
       "provider": "google",
       "model": "gemini-2.5-flash",
       "success": true,
-      "status": "OK (1.31s)",
+      "status": "OK (0.84s)",
       "response": "Response matched but unexpected format"
     },
     {
       "provider": "google",
       "model": "gemini-2.5-pro",
       "success": true,
-      "status": "OK (2.25s)",
+      "status": "OK (2.09s)",
       "response": "Response matched but unexpected format"
     },
     {
       "provider": "google-alt",
       "model": "gemini-2.5-flash",
       "success": true,
-      "status": "OK (1.15s)",
+      "status": "OK (0.95s)",
       "response": "Response matched but unexpected format"
     },
     {
       "provider": "nvidia",
       "model": "qwen/qwen2.5-coder-32b-instruct",
       "success": true,
-      "status": "OK (7.23s)",
+      "status": "OK (5.62s)",
       "response": "Hello! How can I assist you today?"
     },
     {
