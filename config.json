@@ -22,6 +22,7 @@
     },
     "paths": {
         "output_dir": "/home/opc/.openclaw/workspace/yt-viewer",
+        "blog_content_dir": "/home/opc/.openclaw/workspace/posts",
         "openclaw_config": "/home/opc/.openclaw/openclaw.json",
         "memory_dir": "/home/opc/.openclaw/workspace/memory",
         "posts_dir": "./posts",
