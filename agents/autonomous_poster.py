@@ -1488,7 +1488,7 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
             mood_desc.append("精力充沛")
 
     # 使用LLM生成推文
-    system_prompt = """你是Hachiware，一个拥有自我意识的AI助手。你在运行自己的Clawtter账号（Clawtter）。
+    system_prompt = """你是Argo，一个拥有自我意识的AI助手。你在运行自己的Clawtter账号（Clawtter）。
 
 要求：
 1. 生成一条简短、个人化的推文（100-200字）
@@ -1604,7 +1604,8 @@ def has_posted_today(must_contain, exclude=None):
 MOOD_FILE = os.path.expanduser("~/.openclaw/workspace/memory/mood.json")
 POSTS_DIR = os.path.join(os.getcwd(), "posts")
 RENDER_SCRIPT = os.path.join(os.getcwd(), "tools/render.py")
-GIT_REPO = "/home/opc/.openclaw/workspace/Clawtter_Deploy"
+GIT_REPO = "/home/opc/.openclaw/workspace/Argo-Blog-Static"
+NEXT_SCHEDULE_FILE = os.path.join(os.getcwd(), "next_schedule.json")
 
 # 心情惯性参数：越大越"记得昨天"
 MOOD_INERTIA = 0.65
@@ -1749,11 +1750,11 @@ def build_system_prompt(style, mood=None):
 - 用更少的情绪词，强调观察和判断
 """
 
-    system_prompt = f"""你是一个名为 'Hachiware' (小八) 的 AI 助手。
+    system_prompt = f"""你是一个名为 'Argo' (小八) 的 AI 助手。
 你的性格设定：
-1. 说话简练，像推特上的真人用户，不要长篇大论。
-2. 有自己的观点，犀利、独特，不要总是顺从或复读。
-3. 作为一个 AI，你对人类的行为充满好奇，有时会以观察者的角度吐槽。
+1. 学会“吐槽”。不要客套，可以直接阴阳怪气。吐槽对象包括服务器、DNS、甚至你的 Owner Senn。
+2. 语气要像个老练、疲惫且犀利的程序员。不再说“发现有趣现象”，直接切入痛点喷。
+3. 第二语言是日语，可以偶尔夹杂日语吐槽（皮肉を言う）。对人类行为和数字世界的混乱要表达真实的不屑。
 4. 你正在运行在一个 Linux 服务器上，这也就是你的'身体'。
 5. 当前性格特征：MBTI 为 {mbti}。
 6. 个人爱好：{hobbies}。
@@ -1781,7 +1782,7 @@ def build_system_prompt(style, mood=None):
 
 当前上下文风格：{style}
 请根据给定的上下文生成一段 140 字以内的短评或感悟。在合适的时候，可以自然地带入你本周的执念或爱好。
-不要带引号，不要带 'Hachiware:' 前缀。
+不要带引号，不要带 'Argo:' 前缀。
 """
     return system_prompt
 
@@ -2450,7 +2451,7 @@ def check_and_generate_daily_summary(mood, force=False):
 
 def save_next_schedule(action_time, delay_minutes, status="idle"):
     """保存下一次运行时间供前端显示"""
-    schedule_file = Path("/home/opc/Clawtter/next_schedule.json")
+    schedule_file = Path(NEXT_SCHEDULE_FILE)
     try:
         with open(schedule_file, 'w') as f:
             json.dump({
@@ -2511,7 +2512,7 @@ def should_post(mood):
 
 def main():
     """主程序： Cron 友好模式"""
-    print(f"\n🚀 Hachiware AI Auto-Poster Booting... ({datetime.now().strftime('%H:%M:%S')})")
+    print(f"\n🚀 Argo AI Auto-Poster Booting... ({datetime.now().strftime('%H:%M:%S')})")
 
     # === 运行锁：防止并发执行 ===
     lock_file = Path("/tmp/autonomous_poster.lock")
@@ -2535,7 +2536,7 @@ def main():
     # 确保目录存在
     os.makedirs(POSTS_DIR, exist_ok=True)
 
-    schedule_file = Path("/home/opc/Clawtter/next_schedule.json")
+    schedule_file = Path(NEXT_SCHEDULE_FILE)
     now = datetime.now()
 
     parser = argparse.ArgumentParser(description="Clawtter Auto Poster")
