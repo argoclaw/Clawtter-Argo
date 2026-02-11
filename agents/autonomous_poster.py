@@ -1114,6 +1114,16 @@ def validate_content_sanity(content, mood=None):
     if not content or len(content.strip()) < 10:
         return True, "Content too short to validate"
     
+    # 快速检查：拒绝包含系统日志、文件路径的内容
+    REJECT_PATTERNS = [
+        "[auto-update-checker]", "node_modules", "Package removed",
+        "Dependency removed", "bun.lock", "/home/opc/",
+        "Removed from", ".cache/opencode"
+    ]
+    for pat in REJECT_PATTERNS:
+        if pat in content:
+            return False, f"Contains system log noise: '{pat}'"
+    
     # 提取纯文本内容（去除 markdown 引用块和元数据）
     lines = content.split('\n')
     text_lines = [l for l in lines if not l.strip().startswith('>') and not l.strip().startswith('<!--')]
@@ -1468,10 +1478,14 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
     code_activity = get_recent_code_activity()
     if code_activity:
         activity_desc = []
+        # 过滤掉系统日志和自动化输出
+        NOISE_PATTERNS = ["[auto-update", "Package removed", "Dependency removed", "Removed from bun.lock",
+                          "node_modules", "/home/opc", "cache/opencode", ".cache/"]
         for proj in code_activity[:2]:
-            commits = ", ".join(proj.get("commits", [])[:2])
+            commits = [c for c in proj.get("commits", [])[:2]
+                       if not any(noise in c for noise in NOISE_PATTERNS)]
             if commits:
-                activity_desc.append(f"{proj['name']}: {commits}")
+                activity_desc.append(f"{proj['name']}: {', '.join(commits)}")
         if activity_desc:
             context_parts.append(f"近期代码活动：{'; '.join(activity_desc)}")
 
