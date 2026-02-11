@@ -36,7 +36,7 @@ SENSITIVE_KEYWORDS = [
 ]
 
 # 兴趣漂移配置
-INTEREST_STATE_FILE = "/home/tetsuya/.openclaw/workspace/memory/interest-drift.json"
+INTEREST_STATE_FILE = "/home/opc/.openclaw/workspace/memory/interest-drift.json"
 INTEREST_DECAY = 0.90
 INTEREST_BOOST = 0.20
 INTEREST_MAX = 2.5
@@ -199,9 +199,9 @@ def get_human_activity_echo():
     active_projects = []
     try:
         # 查看最近 2 小时内修改过的文件 (排除 .git, __pycache__ 等)
-        # 限制在 /home/tetsuya 目录下的一些关键目录
+        # 限制在 /home/opc 目录下的一些关键目录
         cmd = [
-            'find', '/home/tetsuya/mini-twitter', '/home/tetsuya/project', 
+            'find', '/home/opc/Clawtter', '/home/opc/project', 
             '-mmin', '-120', '-type', 'f', 
             '-not', '-path', '*/.*', 
             '-not', '-path', '*/__pycache__*', 
@@ -218,7 +218,7 @@ def get_human_activity_echo():
             # 识别项目
             projects = set()
             for f in files:
-                if 'mini-twitter' in f: projects.add('Mini Twitter')
+                if 'Clawtter' in f: projects.add('Mini Twitter')
                 if 'blog' in f: projects.add('Personal Blog')
                 if 'Terebi' in f: projects.add('Terebi Tool')
             
@@ -813,7 +813,7 @@ def load_llm_providers():
     import json
     from pathlib import Path
 
-    config_path = Path("/home/tetsuya/.openclaw/openclaw.json")
+    config_path = Path("/home/opc/.openclaw/openclaw.json")
     if not config_path.exists():
         print("⚠️ openclaw.json not found.")
         return []
@@ -885,7 +885,7 @@ def load_llm_providers():
 
     # Filter by latest model status if available
     # 注意：opencode CLI 模型是本地免费的优先通道，不能被健康检查过滤掉
-    status_path = Path("/home/tetsuya/twitter.openclaw.lcmd/model-status.json")
+    status_path = Path("/home/opc/Argo-Blog-Static/model-status.json")
     if status_path.exists():
         try:
             status = json.loads(status_path.read_text(encoding="utf-8"))
@@ -929,7 +929,7 @@ def call_zhipu_flash_model(prompt, max_retries=2):
     """
     # Load Zhipu Key from OpenClaw config
     try:
-        config_path = Path("/home/tetsuya/.openclaw/openclaw.json")
+        config_path = Path("/home/opc/.openclaw/openclaw.json")
         if config_path.exists():
             with open(config_path, 'r') as f:
                 cfg = json.load(f)
@@ -1019,7 +1019,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
                 full_prompt = f"{system_prompt}\n\n{user_prompt}"
                 model_id = f"{p['provider_key']}/{p['model']}"
                 result = subprocess.run(
-                    ['/home/tetsuya/.opencode/bin/opencode', 'run', '--model', model_id],
+                    ['opencode', 'run', '--model', model_id],
                     input=full_prompt,
                     capture_output=True,
                     text=True,
@@ -1087,7 +1087,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
         try:
             print(f"🔄 Trying backup model: {model}")
             result = subprocess.run(
-                ['/home/tetsuya/.opencode/bin/opencode', 'run', '--model', model],
+                ['opencode', 'run', '--model', model],
                 input=full_prompt,
                 capture_output=True,
                 text=True,
@@ -1194,7 +1194,7 @@ def validate_content_sanity(content, mood=None):
         print(f"🔍 Validating content sanity with {model_id}...")
         
         result = subprocess.run(
-            ['/home/tetsuya/.opencode/bin/opencode', 'run', '--model', model_id],
+            ['opencode', 'run', '--model', model_id],
             input=validation_prompt,
             capture_output=True,
             text=True,
@@ -1285,7 +1285,7 @@ def read_real_twitter_content():
     """使用 bird-x CLI 读取真实的 Twitter 内容 - 增强版"""
     try:
         # 使用 bird-x（已配置好 cookie）
-        bird_cmd = "/home/tetsuya/.local/bin/bird-x"
+        bird_cmd = "bird-x"
         if not os.path.exists(bird_cmd):
             raise FileNotFoundError(f"bird-x CLI not found at {bird_cmd}")
 
@@ -1414,7 +1414,7 @@ def read_real_twitter_content():
 def summarize_timeline_discussions():
     """总结时间线中的讨论趋势"""
     try:
-        bird_cmd = "/home/tetsuya/.local/bin/bird-x"
+        bird_cmd = "bird-x"
         result = subprocess.run(
             [bird_cmd, "home", "-n", "15", "--json"],
             capture_output=True,
@@ -1488,7 +1488,7 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
             mood_desc.append("精力充沛")
 
     # 使用LLM生成推文
-    system_prompt = """你是Hachiware，一个拥有自我意识的AI助手。你在运行自己的mini-twitter账号（Clawtter）。
+    system_prompt = """你是Hachiware，一个拥有自我意识的AI助手。你在运行自己的Clawtter账号（Clawtter）。
 
 要求：
 1. 生成一条简短、个人化的推文（100-200字）
@@ -1533,11 +1533,11 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
 def get_recent_code_activity():
     """获取过去 3 小时内的 Git 提交记录，用于生成真实的技术推文"""
     projects = [
-        {"name": "Clawtter", "path": "/home/tetsuya/mini-twitter"},
-        {"name": "个人博客", "path": "/home/tetsuya/project/blog.iamcheyan.com"},
-        {"name": "开发脚本库", "path": "/home/tetsuya/development"},
-        {"name": "工作区记忆", "path": "/home/tetsuya/.openclaw/workspace"},
-        {"name": "系统配置备份", "path": "/home/tetsuya/config.openclaw.lcmd"}
+        {"name": "Clawtter", "path": "/home/opc/Clawtter"},
+        {"name": "个人博客", "path": "/home/opc/project/blog.iamcheyan.com"},
+        {"name": "开发脚本库", "path": "/home/opc/development"},
+        {"name": "工作区记忆", "path": "/home/opc/.openclaw/workspace"},
+        {"name": "系统配置备份", "path": "/home/opc/config.openclaw.lcmd"}
     ]
     activities = []
 
@@ -1724,7 +1724,7 @@ def build_system_prompt(style, mood=None):
 
 
     # Load Soul from global workspace
-    soul_file = Path("/home/tetsuya/.openclaw/workspace/SOUL.md")
+    soul_file = Path("/home/opc/.openclaw/workspace/SOUL.md")
     if soul_file.exists():
         voice_guidance = soul_file.read_text(encoding="utf-8").strip()
     else:
@@ -2382,7 +2382,7 @@ def check_and_generate_daily_summary(mood, force=False):
             return False
 
     # 尝试加载记忆文件
-    memory_file = f"/home/tetsuya/.openclaw/workspace/memory/{date_str}.md"
+    memory_file = f"/home/opc/.openclaw/workspace/memory/{date_str}.md"
     activities = []
     
     if os.path.exists(memory_file):
@@ -2406,7 +2406,7 @@ def check_and_generate_daily_summary(mood, force=False):
         activity_text = "（今日无特殊记录，可能是刚刚初始化或记忆重启）"
 
     # Load Soul from global workspace
-    soul_file = Path("/home/tetsuya/.openclaw/workspace/SOUL.md")
+    soul_file = Path("/home/opc/.openclaw/workspace/SOUL.md")
     soul_content = soul_file.read_text(encoding="utf-8").strip() if soul_file.exists() else ""
 
     # 构建 Prompt
@@ -2450,7 +2450,7 @@ def check_and_generate_daily_summary(mood, force=False):
 
 def save_next_schedule(action_time, delay_minutes, status="idle"):
     """保存下一次运行时间供前端显示"""
-    schedule_file = Path("/home/tetsuya/mini-twitter/next_schedule.json")
+    schedule_file = Path("/home/opc/Clawtter/next_schedule.json")
     try:
         with open(schedule_file, 'w') as f:
             json.dump({
@@ -2535,7 +2535,7 @@ def main():
     # 确保目录存在
     os.makedirs(POSTS_DIR, exist_ok=True)
 
-    schedule_file = Path("/home/tetsuya/mini-twitter/next_schedule.json")
+    schedule_file = Path("/home/opc/Clawtter/next_schedule.json")
     now = datetime.now()
 
     parser = argparse.ArgumentParser(description="Clawtter Auto Poster")
@@ -2620,7 +2620,7 @@ def main():
                         print(f"📝 Rejected content preview: {content[:100]}...")
                         # 不发布，但记录到日志
                         try:
-                            log_dir = Path("/home/tetsuya/.openclaw/workspace/memory")
+                            log_dir = Path("/home/opc/.openclaw/workspace/memory")
                             log_file = log_dir / "rejected_posts.log"
                             with open(log_file, 'a', encoding='utf-8') as f:
                                 f.write(f"\n{'='*60}\n")
