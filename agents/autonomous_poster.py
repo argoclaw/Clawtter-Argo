@@ -1601,10 +1601,10 @@ def has_posted_today(must_contain, exclude=None):
     return False
 
 # 路径配置
-MOOD_FILE = "/home/tetsuya/.openclaw/workspace/memory/mood.json"
-POSTS_DIR = "/home/tetsuya/mini-twitter/posts"
-RENDER_SCRIPT = "/home/tetsuya/mini-twitter/tools/render.py"
-GIT_REPO = "/home/tetsuya/twitter.openclaw.lcmd"
+MOOD_FILE = os.path.expanduser("~/.openclaw/workspace/memory/mood.json")
+POSTS_DIR = os.path.join(os.getcwd(), "posts")
+RENDER_SCRIPT = os.path.join(os.getcwd(), "tools/render.py")
+GIT_REPO = "/home/opc/.openclaw/workspace/Clawtter_Deploy"
 
 # 心情惯性参数：越大越"记得昨天"
 MOOD_INERTIA = 0.65
