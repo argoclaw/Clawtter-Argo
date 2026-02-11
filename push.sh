@@ -68,20 +68,32 @@ else
 fi
 
 
-# 6. Push Main Blog
-echo "✍️ Pushing Main Blog..."
-BLOG_DIR_RAW=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['paths']['blog_content_dir'])")
-BLOG_DIR="${BLOG_DIR_RAW/#\~/$HOME}"
-cd "$(dirname "$BLOG_DIR")"
-if [ -f "./push" ]; then
-    ./push
-    if [ $? -eq 0 ]; then
-        echo "✅ Successfully pushed main blog!"
+# 6. Push Deploy Repo (Argo-Blog-Static)
+echo "✍️ Pushing Deploy Repo..."
+DEPLOY_DIR="/home/opc/.openclaw/workspace/Clawtter_Deploy"
+if [ -d "$DEPLOY_DIR/.git" ]; then
+    # Copy rendered output to deploy repo
+    cp -f "$OUTPUT_DIR/index.html" "$DEPLOY_DIR/" 2>/dev/null
+    cp -f "$OUTPUT_DIR/feed.xml" "$DEPLOY_DIR/" 2>/dev/null
+    cp -f "$OUTPUT_DIR/search-index.json" "$DEPLOY_DIR/" 2>/dev/null
+    cp -rf "$OUTPUT_DIR/post/" "$DEPLOY_DIR/" 2>/dev/null
+    cp -rf "$OUTPUT_DIR/date/" "$DEPLOY_DIR/" 2>/dev/null
+
+    cd "$DEPLOY_DIR" || exit 1
+    git add -A
+    if git diff --staged --quiet; then
+        echo "⚠️  No deploy changes to commit."
     else
-        echo "❌ Failed to push main blog!"
+        git commit -m "deploy: $(date '+%Y-%m-%d %H:%M')"
+        git push origin main
+        if [ $? -eq 0 ]; then
+            echo "✅ Deploy repo pushed!"
+        else
+            echo "❌ Deploy push failed!"
+        fi
     fi
 else
-    echo "⚠️ main blog push script not found!"
+    echo "⚠️ Deploy repo not found at $DEPLOY_DIR"
 fi
 
 echo "🎉 All done!"

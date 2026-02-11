@@ -849,11 +849,11 @@ def load_llm_providers():
                         })
 
                 # 3. Google
-                elif p.get('api') == 'google-generative-ai':
+                elif p.get('api') == 'google-generative-ai' and p.get('apiKey'):
                     providers.append({
                         "provider_key": name,
                         "name": name,
-                        "api_key": p['apiKey'],
+                        "api_key": p.get('apiKey', ''),
                         "model": "gemini-2.5-flash",
                         "method": "google"
                     })
@@ -865,8 +865,8 @@ def load_llm_providers():
                             providers.append({
                                 "provider_key": name,
                                 "name": name,
-                                "base_url": p['baseUrl'],
-                                "api_key": p['apiKey'],
+                                "base_url": p.get('baseUrl', ''),
+                                "api_key": p.get('apiKey', ''),
                                 "model": m['id'],
                                 "method": "api"
                             })
@@ -875,8 +875,8 @@ def load_llm_providers():
                             providers.append({
                                 "provider_key": "openrouter",
                                 "name": "openrouter-extra",
-                                "base_url": p['baseUrl'],
-                                "api_key": p['apiKey'],
+                                "base_url": p.get('baseUrl', ''),
+                                "api_key": p.get('apiKey', ''),
                                 "model": em,
                                 "method": "api"
                             })
@@ -1049,7 +1049,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}
                     ],
-                    "max_tokens": 500
+                    "max_tokens": 2000
                 }
                 resp = requests.post(f"{p['base_url'].rstrip('/')}/chat/completions",
                                    json=payload, headers=headers, timeout=15)
