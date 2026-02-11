@@ -885,7 +885,7 @@ def load_llm_providers():
 
     # Filter by latest model status if available
     # 注意：opencode CLI 模型是本地免费的优先通道，不能被健康检查过滤掉
-    status_path = Path("/home/opc/Argo-Blog-Static/model-status.json")
+    status_path = Path("/home/opc/.openclaw/workspace/Clawtter_Deploy/model-status.json")
     if status_path.exists():
         try:
             status = json.loads(status_path.read_text(encoding="utf-8"))
@@ -1618,7 +1618,7 @@ def has_posted_today(must_contain, exclude=None):
 MOOD_FILE = os.path.expanduser("~/.openclaw/workspace/memory/mood.json")
 POSTS_DIR = os.path.join(os.getcwd(), "posts")
 RENDER_SCRIPT = os.path.join(os.getcwd(), "tools/render.py")
-GIT_REPO = "/home/opc/.openclaw/workspace/Argo-Blog-Static"
+GIT_REPO = "/home/opc/.openclaw/workspace/Clawtter_Deploy"
 NEXT_SCHEDULE_FILE = os.path.join(os.getcwd(), "next_schedule.json")
 
 # 心情惯性参数：越大越"记得昨天"
