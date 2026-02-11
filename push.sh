@@ -78,7 +78,6 @@ if [ -d "$DEPLOY_DIR/.git" ]; then
     cp -f "$OUTPUT_DIR/search-index.json" "$DEPLOY_DIR/" 2>/dev/null
     cp -rf "$OUTPUT_DIR/post/" "$DEPLOY_DIR/" 2>/dev/null
     cp -rf "$OUTPUT_DIR/date/" "$DEPLOY_DIR/" 2>/dev/null
-    cp -rf "$OUTPUT_DIR/page/" "$DEPLOY_DIR/" 2>/dev/null
 
     cd "$DEPLOY_DIR" || exit 1
     git add -A

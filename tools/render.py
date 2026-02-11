@@ -677,65 +677,41 @@ def render_posts():
     
     print(f"  ✓ {generated_count} pages generated, {skipped_count} pages skipped (unchanged)")
 
-    # 2. 生成首页 + 分页 (每页 20 条，按条数分页)
-    POSTS_PER_PAGE = 20
-    total_pages = max(1, (len(posts) + POSTS_PER_PAGE - 1) // POSTS_PER_PAGE)
-    print(f"🏠 Generating homepage + {total_pages} paginated pages ({POSTS_PER_PAGE} posts/page)...")
-    
-    page_dir = OUTPUT_DIR / 'page'
-    page_dir.mkdir(parents=True, exist_ok=True)
-    
-    for page_num in range(total_pages):
-        start = page_num * POSTS_PER_PAGE
-        end = min(start + POSTS_PER_PAGE, len(posts))
-        page_posts = posts[start:end]
-        is_home = (page_num == 0)
-        
-        posts_html_list = [render_tweet_html(p, timestamp, CONFIG, is_home=is_home) for p in page_posts]
-        
-        page_pagination = {
-            'enabled': total_pages > 1,
+    # 2. 生成首页 (仅显示第一天)
+    print("🏠 Generating homepage...")
+    first_date_key = all_dates[0]
+    first_date_posts = posts_by_date[first_date_key]
+    posts_html_list = [render_tweet_html(p, timestamp, CONFIG, is_home=True) for p in first_date_posts]
+    html_output = index_template.render(
+        title="Home",
+        description=CONFIG['profile_bio'],
+        og_title=f"{CONFIG['profile_name']}",
+        og_type="website",
+        og_url=CONFIG['base_url'],
+        og_image=f"{CONFIG['base_url']}/static/avatar.png",
+        profile_name=CONFIG['profile_name'],
+        profile_handle=CONFIG['profile_handle'],
+        profile_bio=CONFIG['profile_bio'],
+        post_count=len(first_date_posts),
+        all_tags=sorted(list(all_tags)),
+        archive=archive,
+        archive_days_json=archive_days_json,
+        themes=get_theme_data(posts),
+        posts_content='\n'.join(posts_html_list),
+        pagination={
+            'enabled': True,
             'all_dates': all_dates,
-            'total_pages': total_pages,
-            'current_idx': page_num + 1,
-            'is_home': is_home,
-            'current_date': f"Page {page_num + 1}",
-            'page_num': page_num + 1,
-            'has_prev': page_num > 0,
-            'has_next': page_num < total_pages - 1,
-            'prev_url': 'index.html' if page_num == 1 else f'page/{page_num}.html' if not is_home else None,
-            'next_url': f'page/{page_num + 2}.html' if is_home else f'{page_num + 2}.html',
-        }
-        
-        html_output = index_template.render(
-            title="Home" if is_home else f"Page {page_num + 1}",
-            description=CONFIG['profile_bio'],
-            og_title=f"{CONFIG['profile_name']}",
-            og_type="website",
-            og_url=CONFIG['base_url'] if is_home else f"{CONFIG['base_url']}/page/{page_num + 1}.html",
-            og_image=f"{CONFIG['base_url']}/static/avatar.png",
-            profile_name=CONFIG['profile_name'],
-            profile_handle=CONFIG['profile_handle'],
-            profile_bio=CONFIG['profile_bio'],
-            post_count=len(page_posts),
-            all_tags=sorted(list(all_tags)),
-            archive=archive,
-            archive_days_json=archive_days_json,
-            themes=get_theme_data(posts),
-            posts_content='\n'.join(posts_html_list),
-            pagination=page_pagination,
-            last_updated=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            next_update=next_update_str,
-            timestamp=timestamp,
-            CONFIG=CONFIG
-        )
-        
-        if is_home:
-            with open(OUTPUT_DIR / 'index.html', 'w', encoding='utf-8') as f:
-                f.write(html_output)
-        else:
-            with open(page_dir / f'{page_num + 1}.html', 'w', encoding='utf-8') as f:
-                f.write(html_output)
+            'total_pages': len(all_dates),
+            'current_idx': 1,
+            'is_home': True
+        },
+        last_updated=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        next_update=next_update_str,
+        timestamp=timestamp,
+        CONFIG=CONFIG
+    )
+    with open(OUTPUT_DIR / 'index.html', 'w', encoding='utf-8') as f:
+        f.write(html_output)
     
     # 3. 生成日期页面
     print(f"📅 Generating {len(all_dates)} date pages...")
@@ -763,11 +739,14 @@ def render_posts():
             themes=get_theme_data(posts),
             posts_content='\n'.join(date_posts_html),
             pagination={
-                'enabled': False,
+                'enabled': True,
                 'current_date': date_key,
-                'is_home': False,
-                'has_prev': False,
-                'has_next': False,
+                'prev_date': prev_date,
+                'next_date': next_date,
+                'all_dates': all_dates,
+                'total_pages': len(all_dates),
+                'current_idx': i + 1,
+                'is_home': False
             },
             last_updated=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             next_update=next_update_str,
