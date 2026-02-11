@@ -558,9 +558,11 @@ def get_historical_memory(days_ago=None):
         if candidates:
             return random.choice(candidates)
             
-    # 随机选取至少 7 天前的推文
-    cutoff = datetime.now() - timedelta(days=7)
-    historical = [p for p in all_posts if datetime.fromtimestamp(p.stat().st_mtime) < cutoff]
+    today_str = datetime.now().strftime('%Y/%m/%d')
+    # 随机选取，排除最近 3 天的推文（按路径名判断）
+    cutoff_dates = [(datetime.now() - timedelta(days=i)).strftime('%Y/%m/%d') for i in range(4)]
+    historical = [p for p in all_posts if not any(d in str(p) for d in cutoff_dates)]
+    
     if historical:
         # 优先选更远一点的
         return random.choice(historical)
@@ -569,8 +571,8 @@ def get_historical_memory(days_ago=None):
 def check_and_generate_weekly_recap(mood):
     """每周日或周一生成深度复盘（慢变量：本周反复思考的 3 个问题）"""
     now = datetime.now()
-    # 仅在周一(0)或周日(6)运行
-    if now.weekday() not in [0, 6]:
+    # 仅在周一(0)或周日(6)运行，除非环境变量强制
+    if now.weekday() not in [0, 6] and not os.environ.get("FORCE_RECAP"):
         return False
         
     recap_filename = f"{now.strftime('%Y-W%W')}-weekly-recap.md"
@@ -690,8 +692,8 @@ def generate_idle_exploration_content():
         vibe_context += "【你最近完成的任务 (工作记忆)】\n"
         for t in tasks: vibe_context += f"- {t}\n"
 
-    # 强制进行观点演化测试
-    dice = 0.80 
+    # 随机决策分布 (Waterfall)
+    dice = random.random()
 
     # --- A. 身体感与影子模式 (30%) ---
     # 讨论自己的状态或主人的状态
