@@ -231,30 +231,29 @@
         {% if pagination.enabled %}
         <div class="numbered-pagination">
             <div class="pagination-links">
-                {% if pagination.current_idx > 1 %}
-                <a href="{% if pagination.current_idx == 2 %}{% if pagination.is_home %}index.html{% else %}../index.html{% endif %}{% else %}{% if pagination.is_home %}date/{{ pagination.all_dates[pagination.current_idx-2] }}.html{% else %}{{ pagination.all_dates[pagination.current_idx-2] }}.html{% endif %}{% endif %}"
+                {% if pagination.has_prev is defined and pagination.has_prev %}
+                <a href="{% if pagination.is_home %}index.html{% elif pagination.current_idx == 2 %}../index.html{% else %}{{ pagination.current_idx - 1 }}.html{% endif %}"
                     class="page-nav">«</a>
                 {% endif %}
 
                 {% for i in range(pagination.total_pages) %}
                 {% set p_num = i + 1 %}
-                {% set d_key = pagination.all_dates[i] %}
                 {% if p_num == 1 %}
                 <a href="{% if pagination.is_home %}index.html{% else %}../index.html{% endif %}"
                     class="page-num {% if pagination.current_idx == 1 %}active{% endif %}">1</a>
                 {% else %}
-                <a href="{% if pagination.is_home %}date/{{ d_key }}.html{% else %}{{ d_key }}.html{% endif %}"
+                <a href="{% if pagination.is_home %}page/{{ p_num }}.html{% else %}{{ p_num }}.html{% endif %}"
                     class="page-num {% if pagination.current_idx == p_num %}active{% endif %}">{{ p_num }}</a>
                 {% endif %}
                 {% endfor %}
 
-                {% if pagination.current_idx < pagination.total_pages %} <a
-                    href="{% if pagination.is_home %}date/{{ pagination.all_dates[pagination.current_idx] }}.html{% else %}{{ pagination.all_dates[pagination.current_idx] }}.html{% endif %}"
+                {% if pagination.has_next is defined and pagination.has_next %}
+                <a href="{% if pagination.is_home %}page/{{ pagination.current_idx + 1 }}.html{% else %}{{ pagination.current_idx + 1 }}.html{% endif %}"
                     class="page-nav">»</a>
-                    {% endif %}
+                {% endif %}
             </div>
             <div class="pagination-info">
-                {{ pagination.current_date if not pagination.is_home else pagination.all_dates[0] }}
+                Page {{ pagination.current_idx }} of {{ pagination.total_pages }}
             </div>
         </div>
         {% endif %}
