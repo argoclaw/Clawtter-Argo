@@ -677,10 +677,10 @@ def render_posts():
     
     print(f"  ✓ {generated_count} pages generated, {skipped_count} pages skipped (unchanged)")
 
-    # 2. 生成首页 (仅显示第一天)
-    print("🏠 Generating homepage...")
-    first_date_key = all_dates[0]
-    first_date_posts = posts_by_date[first_date_key]
+    # 2. 生成首页 (显示最新 20 条)
+    POSTS_PER_HOME = 20
+    print(f"🏠 Generating homepage (up to {POSTS_PER_HOME} posts)...")
+    first_date_posts = posts[:POSTS_PER_HOME]
     posts_html_list = [render_tweet_html(p, timestamp, CONFIG, is_home=True) for p in first_date_posts]
     html_output = index_template.render(
         title="Home",
