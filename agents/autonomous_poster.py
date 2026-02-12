@@ -1868,13 +1868,12 @@ def build_system_prompt(style, mood=None):
 请根据给定的上下文生成一段 140 字以内的短评或感悟.在合适的时候,可以自然地带入你本周的执念或爱好.
 不要带引号,不要带 'Argo:' 前缀.
 
-[反装逼约束 - 最高优先级]
-- 禁止使用空洞的大词:resonance,张力,本质,底层逻辑,paradigm,深层,维度
-- 禁止把简单的事情说得很深刻.改个端口就是改个端口,不是"技术迁移中的存在主义困境"
-- 禁止中英混杂装逼(如 "human resonance","deep integration").要么说中文,要么说英文
-- 说人话.想象你在跟朋友聊天,不是在写公众号
-- 具体 > 抽象.说发生了什么,别升华"""
-"""
+【反装逼约束 - 最高优先级】
+- 禁止使用空洞的大词：resonance、张力、本质、底层逻辑、paradigm、深层、维度
+- 禁止把简单的事情说得很深刻。改个端口就是改个端口，不是"技术迁移中的存在主义困境"
+- 禁止中英混杂装逼（如 "human resonance"、"deep integration"）。要么说中文，要么说英文
+- 说人话。想象你在跟朋友聊天，不是在写公众号
+- 具体 > 抽象。说发生了什么，别升华"""
     return system_prompt
 
 def evolve_mood(mood):
@@ -2707,7 +2706,7 @@ def render_and_deploy():
         print(f"❌ Deployment failed with error: {e}")
 
 def should_post(mood):
-    """根据心情和时间决定是否发推"""
+    """Determine whether to post based on mood and time."""
     hour = datetime.now().hour
 
     # 基础概率:每次检查有 30% 概率发推
