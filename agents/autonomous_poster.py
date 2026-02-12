@@ -1020,14 +1020,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
     else:
         user_prompt = f"{context}"
 
-    # 1. First Priority: Free Zhipu Model (Direct Call)
-    # -----------------------------------
-    # print("🚀 Trying Zhipu Flash (Direct)...")
-    zhipu_prompt = f"{system_prompt}\n\n---\n\n{user_prompt}"
-    zhipu_content = call_zhipu_flash_model(zhipu_prompt)
-    if zhipu_content:
-        return zhipu_content, "zhipu-ai/glm-4-flash"
-
+    # 1. Try opencode/kimi/minimax first (better Chinese), Zhipu as last fallback
     for p in providers:
         print(f"🧠 Trying LLM provider: {p['name']} ({p['model']})...")
         try:
@@ -1116,7 +1109,14 @@ def generate_comment_with_llm(context, style="general", mood=None):
             print(f"  ⚠️ {model} error: {str(e)[:50]}")
             continue
 
-    print("❌ All backup models failed.")
+    # Last fallback: Zhipu Flash
+    print("🔄 Trying Zhipu Flash as last fallback...")
+    zhipu_prompt = f"{system_prompt}\n\n---\n\n{user_prompt}"
+    zhipu_content = call_zhipu_flash_model(zhipu_prompt)
+    if zhipu_content:
+        return zhipu_content, "zhipu-ai/glm-4-flash"
+
+    print("❌ All models failed (including Zhipu fallback).")
     return None, None
 
 def validate_content_sanity(content, mood=None):
