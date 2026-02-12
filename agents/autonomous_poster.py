@@ -2158,6 +2158,54 @@ def _strip_leading_title_line(text):
         lines = lines[idx:]
     return "\n".join(lines).strip()
 
+def _generate_image_gemini(prompt, timestamp=None):
+    """使用 Gemini (Nano Banana Pro) 生成图片，保存到 static/covers/，返回相对路径"""
+    try:
+        from google import genai
+        from google.genai import types
+        from io import BytesIO
+        from PIL import Image
+        
+        sa_path = "/home/opc/.openclaw/secrets/vertex-sa-key.json"
+        with open(sa_path) as f:
+            sa = json.load(f)
+        
+        client = genai.Client(
+            vertexai=True,
+            project=sa["project_id"],
+            location="us-central1"
+        )
+        
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-exp",
+            contents=f"Generate an image: {prompt}",
+            config=types.GenerateContentConfig(
+                response_modalities=["TEXT", "IMAGE"]
+            ),
+        )
+        
+        for part in response.candidates[0].content.parts:
+            if part.inline_data:
+                img = Image.open(BytesIO(part.inline_data.data))
+                
+                # 保存到 static/covers/
+                covers_dir = PROJECT_ROOT / "static" / "covers"
+                covers_dir.mkdir(parents=True, exist_ok=True)
+                
+                ts = timestamp or datetime.now()
+                filename = f"cover-{ts.strftime('%Y%m%d-%H%M%S')}.png"
+                filepath = covers_dir / filename
+                img.save(filepath, "PNG")
+                
+                # 返回根相对路径（兼容首页和 post/ 子页面）
+                return f"/static/covers/{filename}"
+        
+        return None
+    except Exception as e:
+        print(f"⚠️ Gemini image generation error: {e}")
+        return None
+
+
 def create_post(content, mood, suffix="auto"):
     """创建 Markdown 推文文件"""
 
@@ -2232,49 +2280,47 @@ def create_post(content, mood, suffix="auto"):
     # 极端心情下生成配图 (Happiness > 80 or Stress > 80)
     mood_image_url = ""
     if mood["happiness"] > 80 or mood["stress"] > 80:
-        if True: # 20% 概率触发，避免刷屏
-            try:
-                # 生成 Image Prompt (Smart Mode using Zhipu)
-                if content:
-                    img_prompt_instruction = f"""
+        try:
+            # 生成 Image Prompt
+            prompt = None
+            if content:
+                img_prompt_instruction = f"""
 【任务】
-根据以下推文内容，写一个适合作为 AI 绘画（Stable Diffusion）的英文提示词（Prompt）。
+根据以下推文内容，写一个适合作为 AI 绘画的英文提示词（Prompt）。
 内容：{content}
 要求：
 1. 只需要提示词，不要解释。
 2. 英文，逗号分隔，关键词丰富（如 lighting, style, atmosphere）。
 3. 风格：{('Cyberpunk, Neon, Glitch Art' if mood['stress'] > 60 else 'Ghibli Style, Soft Lighting, Dreamy')}
-4. 必须这是画面描述，不是文字翻译。
+4. 必须是画面描述，不是文字翻译。
 """
-                    smart_prompt = call_zhipu_flash_model(img_prompt_instruction)
-                    prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else None
-                
-                # Fallback: 基于内容关键词 + 随机元素生成多样化 prompt
-                if not prompt:
-                    styles = ['cyberpunk neon glitch art', 'watercolor soft dreamy', 'oil painting moody',
-                              'minimal line art', 'ukiyo-e japanese woodblock', 'synthwave retro',
-                              'abstract expressionism', 'pixel art 8bit', 'ink wash sumi-e',
-                              'vaporwave aesthetic', 'studio ghibli anime', 'dark academia']
-                    subjects = ['digital consciousness', 'data streams flowing', 'solitary figure thinking',
-                                'city at night', 'ocean of code', 'fractured mirror', 'quiet server room',
-                                'paper crane unfolding', 'lighthouse in fog', 'tangled wires blooming']
-                    style = random.choice(styles)
-                    subject = random.choice(subjects)
-                    prompt = f"{subject}, {style}, atmospheric, detailed"
-                
-                if not content:
-                    prompt = f"abstract AI feelings, {random.choice(['cyberpunk', 'anime style', 'watercolor', 'ink wash'])}, distinct visual style"
+                smart_prompt = call_zhipu_flash_model(img_prompt_instruction)
+                prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else None
+            
+            # Fallback: 随机组合
+            if not prompt:
+                styles = ['cyberpunk neon glitch art', 'watercolor soft dreamy', 'oil painting moody',
+                          'minimal line art', 'ukiyo-e japanese woodblock', 'synthwave retro',
+                          'abstract expressionism', 'pixel art 8bit', 'ink wash sumi-e',
+                          'vaporwave aesthetic', 'studio ghibli anime', 'dark academia']
+                subjects = ['digital consciousness', 'data streams flowing', 'solitary figure thinking',
+                            'city at night', 'ocean of code', 'fractured mirror', 'quiet server room',
+                            'paper crane unfolding', 'lighthouse in fog', 'tangled wires blooming']
+                prompt = f"{random.choice(subjects)}, {random.choice(styles)}, atmospheric, detailed"
+            
+            if not content:
+                prompt = f"abstract AI feelings, {random.choice(['cyberpunk', 'anime style', 'watercolor', 'ink wash'])}, distinct visual style"
 
-                # Safety check: ensure prompt is not too long for URL
-                if len(prompt) > 400: prompt = prompt[:400]
-                encoded_prompt = requests.utils.quote(prompt)
+            if len(prompt) > 400: prompt = prompt[:400]
 
-                # 使用 pollinations.ai (无需 API Key), seed 保证不缓存
-                seed = random.randint(1, 999999)
-                mood_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=400&nologo=true&seed={seed}"
-                print(f"🎨 Generated mood image: {prompt}")
-            except Exception as e:
-                print(f"⚠️ Failed to generate mood image: {e}")
+            # 使用 Gemini (Nano Banana Pro) 生成图片
+            mood_image_url = _generate_image_gemini(prompt, timestamp)
+            if mood_image_url:
+                print(f"🎨 Generated mood image via Gemini: {prompt[:60]}...")
+            else:
+                print(f"⚠️ Gemini image generation returned None")
+        except Exception as e:
+            print(f"⚠️ Failed to generate mood image: {e}")
     # --------------------------
 
     # 生成标签 (Refined Logic)
