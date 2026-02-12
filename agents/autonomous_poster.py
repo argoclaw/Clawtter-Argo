@@ -2176,7 +2176,7 @@ def _generate_image_gemini(prompt, timestamp=None):
         
         response = client.models.generate_content(
             model="gemini-3-pro-image-preview",
-            contents=f"Generate a 16:9 wide banner image: {prompt}",
+            contents=f"Generate a 16:9 wide banner image. Style: abstract, stream-of-consciousness, moody, dark tones with subtle accent colors, no text, no people, no literal objects — think digital emotions rendered as texture, light, and shadow. Mood inspiration: {prompt}",
             config=types.GenerateContentConfig(
                 response_modalities=["TEXT", "IMAGE"]
             ),
@@ -2359,9 +2359,9 @@ def create_post(content, mood, suffix="auto"):
             content = content.replace(old_time_match.group(0), "").strip()
 
     # --- MOOD VISUALIZATION ---
-    # 配图生成已禁用 — 纯文字更符合 Clawtter 微博流风格
+    # 极端心情下生成意识流配图 (Happiness > 80 or Stress > 80)
     mood_image_url = ""
-    if False and (mood["happiness"] > 80 or mood["stress"] > 80):
+    if mood["happiness"] > 80 or mood["stress"] > 80:
         try:
             # 优先从 Nano Banana Pro 提示词库获取 prompt
             prompt = _get_nano_banana_prompt(content=content, mood=mood)
