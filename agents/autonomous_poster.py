@@ -2215,7 +2215,7 @@ def create_post(content, mood, suffix="auto"):
 3. 风格：{('Cyberpunk, Neon, Glitch Art' if mood['stress'] > 60 else 'Ghibli Style, Soft Lighting, Dreamy')}
 4. 必须这是画面描述，不是文字翻译。
 """
-                    smart_prompt = call_zhipu_flash_model(img_prompt_instruction)
+                    smart_prompt, _ = generate_comment_with_llm(img_prompt_instruction, "image_prompt")
                     prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else f"abstract digital art, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}"
                 else:
                     prompt = f"abstract AI feelings, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}, distinct visual style"
