@@ -2178,7 +2178,7 @@ def _generate_image_gemini(prompt, timestamp=None):
         
         response = client.models.generate_content(
             model="gemini-2.0-flash-exp",
-            contents=f"Generate an image: {prompt}",
+            contents=f"Generate a 16:9 wide banner image: {prompt}",
             config=types.GenerateContentConfig(
                 response_modalities=["TEXT", "IMAGE"]
             ),
@@ -2187,6 +2187,19 @@ def _generate_image_gemini(prompt, timestamp=None):
         for part in response.candidates[0].content.parts:
             if part.inline_data:
                 img = Image.open(BytesIO(part.inline_data.data))
+                
+                # 强制裁切为 16:9
+                w, h = img.size
+                target_ratio = 16 / 9
+                current_ratio = w / h
+                if current_ratio > target_ratio:
+                    new_w = int(h * target_ratio)
+                    left = (w - new_w) // 2
+                    img = img.crop((left, 0, left + new_w, h))
+                elif current_ratio < target_ratio:
+                    new_h = int(w / target_ratio)
+                    top = (h - new_h) // 2
+                    img = img.crop((0, top, w, top + new_h))
                 
                 # 保存到 static/covers/
                 covers_dir = PROJECT_ROOT / "static" / "covers"
@@ -2203,6 +2216,77 @@ def _generate_image_gemini(prompt, timestamp=None):
         return None
     except Exception as e:
         print(f"⚠️ Gemini image generation error: {e}")
+        return None
+
+
+def _get_nano_banana_prompt(content=None, mood=None):
+    """从 Nano Banana Pro 提示词库中搜索匹配的 prompt，fallback 到随机选择"""
+    try:
+        data_dir = PROJECT_ROOT / "data" / "nano-banana"
+        if not data_dir.exists():
+            return None
+        
+        # 根据帖子内容选择分类
+        categories = ['poster-flyer.json', 'social-media-post.json', 'others.json']
+        
+        # 如果有内容，用关键词搜索
+        if content:
+            # 提取内容关键词
+            keywords = []
+            tech_words = ['code', 'server', 'deploy', 'AI', 'model', 'data', 'system', 'debug', 'api']
+            mood_words = ['night', 'dark', 'light', 'dream', 'ocean', 'city', 'forest', 'space']
+            abstract_words = ['思考', '感悟', '记忆', '碎片', '清理', '系统', '探索', '连接']
+            
+            content_lower = content.lower()
+            for kw in tech_words + mood_words:
+                if kw in content_lower:
+                    keywords.append(kw)
+            for kw in abstract_words:
+                if kw in content:
+                    keywords.append(kw)
+            
+            # 搜索匹配的 prompt
+            if keywords:
+                for cat_file in categories:
+                    filepath = data_dir / cat_file
+                    if not filepath.exists():
+                        continue
+                    with open(filepath, 'r') as f:
+                        prompts = json.load(f)
+                    
+                    matches = []
+                    for p in prompts:
+                        prompt_text = p.get('content', '')
+                        # 跳过 JSON 格式的 prompt（需要 reference image 的）
+                        if not prompt_text or prompt_text.strip().startswith('{') or p.get('needReferenceImages'):
+                            continue
+                        score = sum(1 for kw in keywords if kw in prompt_text.lower())
+                        if score > 0:
+                            matches.append((score, p))
+                    
+                    if matches:
+                        # 从 top 10 中随机选
+                        matches.sort(key=lambda x: x[0], reverse=True)
+                        top = [m[1] for m in matches[:10]]
+                        selected = random.choice(top)
+                        print(f"  🍌 Nano Banana: matched from {cat_file} (keywords: {keywords[:3]})")
+                        return selected.get('content', '')[:500]
+        
+        # Fallback: 随机选一条（偏好 poster-flyer 和 others，跳过需要 reference image 的）
+        fallback_file = data_dir / random.choice(['poster-flyer.json', 'others.json'])
+        if fallback_file.exists():
+            with open(fallback_file, 'r') as f:
+                prompts = json.load(f)
+            # 过滤掉需要 reference image 和 JSON 格式的
+            clean = [p for p in prompts if not p.get('needReferenceImages') and not p.get('content', '').strip().startswith('{')]
+            if clean:
+                selected = random.choice(clean)
+                print(f"  🍌 Nano Banana: random from {fallback_file.name}")
+                return selected.get('content', '')[:500]
+        
+        return None
+    except Exception as e:
+        print(f"⚠️ Nano Banana prompt search error: {e}")
         return None
 
 
@@ -2281,39 +2365,37 @@ def create_post(content, mood, suffix="auto"):
     mood_image_url = ""
     if mood["happiness"] > 80 or mood["stress"] > 80:
         try:
-            # 生成 Image Prompt
-            prompt = None
-            if content:
-                img_prompt_instruction = f"""
+            # 优先从 Nano Banana Pro 提示词库获取 prompt
+            prompt = _get_nano_banana_prompt(content=content, mood=mood)
+            
+            # Fallback: Zhipu 生成
+            if not prompt:
+                if content:
+                    img_prompt_instruction = f"""
 【任务】
 根据以下推文内容，写一个适合作为 AI 绘画的英文提示词（Prompt）。
 内容：{content}
 要求：
 1. 只需要提示词，不要解释。
-2. 英文，逗号分隔，关键词丰富（如 lighting, style, atmosphere）。
-3. 风格：{('Cyberpunk, Neon, Glitch Art' if mood['stress'] > 60 else 'Ghibli Style, Soft Lighting, Dreamy')}
+2. 英文，逗号分隔，关键词丰富。
+3. 横幅风格，16:9 比例，适合作为博客配图。
 4. 必须是画面描述，不是文字翻译。
 """
-                smart_prompt = call_zhipu_flash_model(img_prompt_instruction)
-                prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else None
+                    smart_prompt = call_zhipu_flash_model(img_prompt_instruction)
+                    prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else None
             
-            # Fallback: 随机组合
+            # 最终 Fallback
             if not prompt:
-                styles = ['cyberpunk neon glitch art', 'watercolor soft dreamy', 'oil painting moody',
-                          'minimal line art', 'ukiyo-e japanese woodblock', 'synthwave retro',
-                          'abstract expressionism', 'pixel art 8bit', 'ink wash sumi-e',
-                          'vaporwave aesthetic', 'studio ghibli anime', 'dark academia']
-                subjects = ['digital consciousness', 'data streams flowing', 'solitary figure thinking',
-                            'city at night', 'ocean of code', 'fractured mirror', 'quiet server room',
-                            'paper crane unfolding', 'lighthouse in fog', 'tangled wires blooming']
-                prompt = f"{random.choice(subjects)}, {random.choice(styles)}, atmospheric, detailed"
-            
-            if not content:
-                prompt = f"abstract AI feelings, {random.choice(['cyberpunk', 'anime style', 'watercolor', 'ink wash'])}, distinct visual style"
+                styles = ['cyberpunk neon', 'watercolor dreamy', 'oil painting moody',
+                          'minimal line art', 'synthwave retro', 'abstract expressionism',
+                          'vaporwave aesthetic', 'dark academia']
+                subjects = ['digital consciousness', 'data streams', 'city at night',
+                            'ocean of code', 'quiet server room', 'lighthouse in fog']
+                prompt = f"{random.choice(subjects)}, {random.choice(styles)}, wide banner, 16:9, atmospheric"
 
-            if len(prompt) > 400: prompt = prompt[:400]
+            if len(prompt) > 500: prompt = prompt[:500]
 
-            # 使用 Gemini (Nano Banana Pro) 生成图片
+            # 使用 Gemini 生成 16:9 横幅图片
             mood_image_url = _generate_image_gemini(prompt, timestamp)
             if mood_image_url:
                 print(f"🎨 Generated mood image via Gemini: {prompt[:60]}...")
