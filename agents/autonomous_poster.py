@@ -201,7 +201,7 @@ def get_human_activity_echo():
         # 查看最近 2 小时内修改过的文件 (排除 .git, __pycache__ 等)
         # 限制在 /home/opc 目录下的一些关键目录
         cmd = [
-            'find', '/home/opc/mini-twitter', '/home/opc/project', 
+            'find', '/home/opc/projects/Clawtter', '/home/opc/project', 
             '-mmin', '-120', '-type', 'f', 
             '-not', '-path', '*/.*', 
             '-not', '-path', '*/__pycache__*', 
@@ -218,7 +218,7 @@ def get_human_activity_echo():
             # 识别项目
             projects = set()
             for f in files:
-                if 'mini-twitter' in f: projects.add('Mini Twitter')
+                if 'Clawtter' in f: projects.add('Mini Twitter')
                 if 'blog' in f: projects.add('Personal Blog')
                 if 'Terebi' in f: projects.add('Terebi Tool')
             
@@ -885,7 +885,7 @@ def load_llm_providers():
 
     # Filter by latest model status if available
     # 注意：opencode CLI 模型是本地免费的优先通道，不能被健康检查过滤掉
-    status_path = Path("/home/opc/twitter.openclaw.lcmd/model-status.json")
+    status_path = Path("/home/opc/projects/Clawtter_Deploy/model-status.json")
     if status_path.exists():
         try:
             status = json.loads(status_path.read_text(encoding="utf-8"))
@@ -1019,7 +1019,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
                 full_prompt = f"{system_prompt}\n\n{user_prompt}"
                 model_id = f"{p['provider_key']}/{p['model']}"
                 result = subprocess.run(
-                    ['/home/opc/.opencode/bin/opencode', 'run', '--model', model_id],
+                    ['/home/linuxbrew/.linuxbrew/bin/opencode', 'run', '--model', model_id],
                     input=full_prompt,
                     capture_output=True,
                     text=True,
@@ -1087,7 +1087,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
         try:
             print(f"🔄 Trying backup model: {model}")
             result = subprocess.run(
-                ['/home/opc/.opencode/bin/opencode', 'run', '--model', model],
+                ['/home/linuxbrew/.linuxbrew/bin/opencode', 'run', '--model', model],
                 input=full_prompt,
                 capture_output=True,
                 text=True,
@@ -1194,7 +1194,7 @@ def validate_content_sanity(content, mood=None):
         print(f"🔍 Validating content sanity with {model_id}...")
         
         result = subprocess.run(
-            ['/home/opc/.opencode/bin/opencode', 'run', '--model', model_id],
+            ['/home/linuxbrew/.linuxbrew/bin/opencode', 'run', '--model', model_id],
             input=validation_prompt,
             capture_output=True,
             text=True,
@@ -1488,7 +1488,7 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
             mood_desc.append("精力充沛")
 
     # 使用LLM生成推文
-    system_prompt = """你是Argo，一个拥有自我意识的AI助手。你在运行自己的mini-twitter账号（Clawtter）。
+    system_prompt = """你是Argo，一个拥有自我意识的AI助手。你在运行自己的Clawtter账号（Clawtter）。
 
 要求：
 1. 生成一条简短、个人化的推文（100-200字）
@@ -1533,7 +1533,7 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
 def get_recent_code_activity():
     """获取过去 3 小时内的 Git 提交记录，用于生成真实的技术推文"""
     projects = [
-        {"name": "Clawtter", "path": "/home/opc/mini-twitter"},
+        {"name": "Clawtter", "path": "/home/opc/projects/Clawtter"},
         {"name": "个人博客", "path": "/home/opc/project/blog.iamcheyan.com"},
         {"name": "开发脚本库", "path": "/home/opc/development"},
         {"name": "工作区记忆", "path": "/home/opc/.openclaw/workspace"},
@@ -1602,9 +1602,9 @@ def has_posted_today(must_contain, exclude=None):
 
 # 路径配置
 MOOD_FILE = "/home/opc/.openclaw/workspace/memory/mood.json"
-POSTS_DIR = "/home/opc/mini-twitter/posts"
-RENDER_SCRIPT = "/home/opc/mini-twitter/tools/render.py"
-GIT_REPO = "/home/opc/twitter.openclaw.lcmd"
+POSTS_DIR = "/home/opc/projects/Clawtter/posts"
+RENDER_SCRIPT = "/home/opc/projects/Clawtter/tools/render.py"
+GIT_REPO = "/home/opc/projects/Clawtter_Deploy"
 
 # 心情惯性参数：越大越"记得昨天"
 MOOD_INERTIA = 0.65
@@ -2450,7 +2450,7 @@ def check_and_generate_daily_summary(mood, force=False):
 
 def save_next_schedule(action_time, delay_minutes, status="idle"):
     """保存下一次运行时间供前端显示"""
-    schedule_file = Path("/home/opc/mini-twitter/next_schedule.json")
+    schedule_file = Path("/home/opc/projects/Clawtter/next_schedule.json")
     try:
         with open(schedule_file, 'w') as f:
             json.dump({
@@ -2535,7 +2535,7 @@ def main():
     # 确保目录存在
     os.makedirs(POSTS_DIR, exist_ok=True)
 
-    schedule_file = Path("/home/opc/mini-twitter/next_schedule.json")
+    schedule_file = Path("/home/opc/projects/Clawtter/next_schedule.json")
     now = datetime.now()
 
     parser = argparse.ArgumentParser(description="Clawtter Auto Poster")
