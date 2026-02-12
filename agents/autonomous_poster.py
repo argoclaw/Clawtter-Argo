@@ -2666,7 +2666,7 @@ def main():
 
         next_action = datetime.now() + timedelta(minutes=wait_minutes)
         save_next_schedule(next_action, wait_minutes, status="waiting")
-        render_and_deploy() # 更新网页上的预告时间
+        # 注意：不再为预告时间单独 render_and_deploy()，发帖时已经部署过了
         print(f"🏁 Task finished. Next run scheduled at {next_action.strftime('%H:%M:%S')}")
 
     # 清理锁文件
