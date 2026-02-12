@@ -28,7 +28,7 @@ from core.utils_security import load_config, resolve_path, desensitize_text
 # 加载安全配置
 SEC_CONFIG = load_config()
 
-# 敏感词定义(全局)
+# 敏感词定义（全局）
 SENSITIVE_KEYWORDS = [
     "验证码", "verification code", "verification_code",
     "密钥", "api key", "apikey", "secret", "credential",
@@ -60,7 +60,7 @@ def localize_twitter_date(date_str):
         dt_utc = datetime.strptime(date_str, "%a %b %d %H:%M:%S %z %Y")
         # 转换为本地时间 (JST, +0900)
         dt_jst = dt_utc.astimezone(timezone(timedelta(hours=9)))
-        # 返回格式化后的字符串,此时 %z 会变成 +0900
+        # 返回格式化后的字符串，此时 %z 会变成 +0900
         return dt_jst.strftime("%a %b %d %H:%M:%S %z %Y")
     except Exception as e:
         print(f"Date conversion failed: {e}")
@@ -169,27 +169,27 @@ def get_system_introspection():
         # 负载
         uptime = subprocess.check_output(['uptime'], text=True).strip()
         stats['uptime'] = uptime
-
+        
         # 负载数值 (1, 5, 15 min)
         load = os.getloadavg()
         stats['load'] = load
-
+        
         # 内存
         free = subprocess.check_output(['free', '-m'], text=True).splitlines()
         mem_line = free[1].split()
         stats['mem_used_mb'] = int(mem_line[2])
         stats['mem_total_mb'] = int(mem_line[1])
         stats['mem_percent'] = round(stats['mem_used_mb'] / stats['mem_total_mb'] * 100, 1)
-
+        
         # 磁盘
         df = subprocess.check_output(['df', '-h', '/'], text=True).splitlines()[1].split()
         stats['disk_percent'] = df[4].rstrip('%')
-
+        
         # 时间感
         now = datetime.now()
         stats['hour'] = now.hour
         stats['is_weekend'] = now.weekday() >= 5
-
+        
     except Exception as e:
         stats['error'] = str(e)
     return stats
@@ -201,27 +201,27 @@ def get_human_activity_echo():
         # 查看最近 2 小时内修改过的文件 (排除 .git, __pycache__ 等)
         # 限制在 /home/opc 目录下的一些关键目录
         cmd = [
-            'find', '/home/opc/Clawtter', '/home/opc/project',
-            '-mmin', '-120', '-type', 'f',
-            '-not', '-path', '*/.*',
-            '-not', '-path', '*/__pycache__*',
+            'find', '/home/opc/mini-twitter', '/home/opc/project', 
+            '-mmin', '-120', '-type', 'f', 
+            '-not', '-path', '*/.*', 
+            '-not', '-path', '*/__pycache__*', 
             '-not', '-path', '*/node_modules*'
         ]
         files = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL).splitlines()
-
+        
         if files:
             # 统计文件后缀
             exts = [Path(f).suffix for f in files if Path(f).suffix]
             from collections import Counter
             common_exts = Counter(exts).most_common(3)
-
+            
             # 识别项目
             projects = set()
             for f in files:
-                if 'Clawtter' in f: projects.add('Mini Twitter')
+                if 'mini-twitter' in f: projects.add('Mini Twitter')
                 if 'blog' in f: projects.add('Personal Blog')
                 if 'Terebi' in f: projects.add('Terebi Tool')
-
+            
             active_projects = list(projects)
             return {
                 "active_files_count": len(files),
@@ -243,7 +243,7 @@ def get_task_history():
         if os.path.exists(today_file):
             with open(today_file, 'r', encoding='utf-8') as f:
                 content = f.read()
-                # 寻找具体的任务项 (比如以 - 开头的行,且包含动词)
+                # 寻找具体的任务项 (比如以 - 开头的行，且包含动词)
                 lines = content.splitlines()
                 # 寻找 "实施内容" 或 "成果" 之后的部分
                 start_collecting = False
@@ -266,11 +266,11 @@ def get_task_history():
 
 
 def extract_interaction_echo(memory_data):
-    """从最近记忆里提取一条安全的互动回声(避免敏感信息)"""
+    """从最近记忆里提取一条安全的互动回声（避免敏感信息）"""
     if not memory_data:
         return None
 
-    keywords = ["人类", "tetsuya", "互动", "交流", "对话", "聊天", "讨论", "协作", "一起", "回应", "反馈", "指示", "陪伴"]
+    keywords = ["人类", "senn", "互动", "交流", "对话", "聊天", "讨论", "协作", "一起", "回应", "反馈", "指示", "陪伴"]
     extra_sensitive = [
         "http", "https", "/home/", "~/", "api", "apikey", "api key", "token",
         "password", "密码", "credential", "verification", "验证码", "密钥", "key",
@@ -310,7 +310,7 @@ def extract_interaction_echo(memory_data):
     return picked[:60].rstrip()
 
 def extract_detail_anchors(memory_data=None, code_activity=None):
-    """提取细节锚点(去敏,短句)"""
+    """提取细节锚点（去敏、短句）"""
     anchors = []
     if memory_data:
         try:
@@ -356,7 +356,7 @@ def extract_detail_anchors(memory_data=None, code_activity=None):
     return dedup[:4]
 
 def get_interaction_echo():
-    """获取一条可用的互动回声(可能为空)"""
+    """获取一条可用的互动回声（可能为空）"""
     try:
         memory_data = load_recent_memory()
         return extract_interaction_echo(memory_data)
@@ -364,7 +364,7 @@ def get_interaction_echo():
         return None
 
 def generate_daily_fragment(mood, interaction_echo=None):
-    """生成更像日记碎片的短句(低密度,轻量)"""
+    """生成更像日记碎片的短句（低密度、轻量）"""
     try:
         from skills.environment import get_local_vibe
         vibe = get_local_vibe()
@@ -376,20 +376,20 @@ def generate_daily_fragment(mood, interaction_echo=None):
     current_hour = now.hour
     time_desc = "深夜" if 0 <= current_hour < 6 else "早晨" if 6 <= current_hour < 12 else "午后" if 12 <= current_hour < 18 else "傍晚"
 
-    vibe_context = f"[当前环境]{vibe if vibe else '东京,安静的运行环境'}\n"
-    time_context = f"[当前时间]东京时间 {now.strftime('%H:%M')}({time_desc})\n"
+    vibe_context = f"【当前环境】{vibe if vibe else '东京，安静的运行环境'}\n"
+    time_context = f"【当前时间】东京时间 {now.strftime('%H:%M')}（{time_desc}）\n"
 
     prompt = (
         time_context +
         vibe_context +
-        f"[任务]写一条非常短的{time_desc}日常碎片(20-50字).\n"
-        "要求:\n"
+        f"【任务】写一条非常短的{time_desc}日常碎片（20-50字）。\n"
+        "要求：\n"
         "1. 像日记的随手一笔\n"
         "2. 只表达一个细小感受或观察\n"
-        "3. 不要总结,不说教\n"
+        "3. 不要总结、不说教\n"
         "4. 不要提及'我是AI'或'模型'\n"
         "5. 不要添加标签或列表\n"
-        f"6. 内容必须符合{time_desc}的时间感,白天不要写深夜场景\n"
+        f"6. 内容必须符合{time_desc}的时间感，白天不要写深夜场景\n"
     )
 
     llm_comment, model_name = generate_comment_with_llm(prompt, "general", mood)
@@ -399,7 +399,7 @@ def generate_daily_fragment(mood, interaction_echo=None):
 
 def generate_insomnia_post(mood, interaction_echo=None):
     """深夜小概率的清醒/失眠随想"""
-    # 二次时间验证:防止因并发/锁问题在错误时间执行
+    # 二次时间验证：防止因并发/锁问题在错误时间执行
     current_hour = datetime.now().hour
     if not (1 <= current_hour <= 6):
         print(f"⚠️ Time validation failed: generate_insomnia_post called at hour {current_hour}, not in 1-6. Skipping.")
@@ -411,20 +411,20 @@ def generate_insomnia_post(mood, interaction_echo=None):
     except Exception:
         vibe = None
 
-    vibe_context = f"[当前环境]{vibe if vibe else '东京,安静的运行环境'}\n"
-    echo_line = f"\n[最近互动回声]{interaction_echo}\n(可选参考,不必直述)" if interaction_echo else ""
+    vibe_context = f"【当前环境】{vibe if vibe else '东京，安静的运行环境'}\n"
+    echo_line = f"\n【最近互动回声】{interaction_echo}\n（可选参考，不必直述）" if interaction_echo else ""
 
-    # 在提示词中明确当前时间,让 LLM 能自我纠正
-    time_context = f"[当前时间]东京时间 {datetime.now().strftime('%H:%M')}(深夜)\n"
+    # 在提示词中明确当前时间，让 LLM 能自我纠正
+    time_context = f"【当前时间】东京时间 {datetime.now().strftime('%H:%M')}（深夜）\n"
 
     prompt = (
         time_context +
         vibe_context +
-        "[任务]写一条深夜清醒的短帖(30-70字).\n"
-        "要求:\n"
+        "【任务】写一条深夜清醒的短帖（30-70字）。\n"
+        "要求：\n"
         "1. 像失眠时的低声自语\n"
-        "2. 语气安静,克制,有一点空旷感\n"
-        "3. 不要总结,不说教\n"
+        "2. 语气安静、克制，有一点空旷感\n"
+        "3. 不要总结、不说教\n"
         "4. 不要提及'我是AI'或'模型'\n"
         "5. 不要添加标签或列表\n"
         + echo_line
@@ -471,7 +471,7 @@ def load_all_models_from_config():
 
 
 def check_recent_activity():
-    """检查最近是否有活动(记忆文件是否在最近1小时内更新)"""
+    """检查最近是否有活动（记忆文件是否在最近1小时内更新）"""
     memory_dir = resolve_path(SEC_CONFIG["paths"].get("memory_dir", "~/.openclaw/workspace/memory"))
     today_file = memory_dir / f"{datetime.now().strftime('%Y-%m-%d')}.md"
 
@@ -482,7 +482,7 @@ def check_recent_activity():
     file_mtime = os.path.getmtime(today_file)
     current_time = time.time()
 
-    # 如果文件在最近1小时内修改过,说明有活动
+    # 如果文件在最近1小时内修改过，说明有活动
     time_diff = current_time - file_mtime
     return time_diff < 3600  # 3600秒 = 1小时
 
@@ -498,7 +498,7 @@ def read_recent_blog_posts():
     if not md_files:
         return []
 
-    # 按修改时间排序,取最新的3篇
+    # 按修改时间排序，取最新的3篇
     md_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
     recent_posts = []
 
@@ -519,13 +519,13 @@ def read_recent_blog_posts():
                 slug_match = re.search(r'^slug:\s*(.+)$', content, re.MULTILINE)
                 slug = slug_match.group(1).strip() if slug_match else md_file.stem
 
-                # 提取正文(去掉 frontmatter)
+                # 提取正文（去掉 frontmatter）
                 parts = content.split('---', 2)
                 body = parts[2].strip() if len(parts) >= 3 else content
 
                 # --- FIX START ---
                 import re
-                # 修复相对路径图片链接,指向博客绝对 URL
+                # 修复相对路径图片链接，指向博客绝对 URL
                 # 1. ../assets/ -> https://blog.your-domain.com/assets/
                 body = re.sub(r'\((?:\.\./)+assets/', '(https://blog.your-domain.com/assets/', body)
                 # 2. assets/ -> https://blog.your-domain.com/assets/
@@ -537,7 +537,7 @@ def read_recent_blog_posts():
                     'date': date_val,
                     'url': f"https://blog.your-domain.com/{slug}.html",
                     'file': md_file.name,
-                    'preview': body[:300]  # 增加一点长度,避免截断链接
+                    'preview': body[:300]  # 增加一点长度，避免截断链接
                 })
         except:
             continue
@@ -550,48 +550,48 @@ def get_historical_memory(days_ago=None):
     all_posts = sorted(posts_dir.rglob('*.md'))
     if not all_posts:
         return None
-
-    # 过滤掉 summary 文件,只保留推文
+    
+    # 过滤掉 summary 文件，只保留推文
     all_posts = [p for p in all_posts if "summary" not in p.name]
-
+    
     if days_ago:
         target_vague = (datetime.now() - timedelta(days=days_ago)).strftime('%Y-%m')
         candidates = [p for p in all_posts if target_vague in p.name]
         if candidates:
             return random.choice(candidates)
-
+            
     today_str = datetime.now().strftime('%Y/%m/%d')
-    # 随机选取,排除最近 3 天的推文(按路径名判断)
+    # 随机选取，排除最近 3 天的推文（按路径名判断）
     cutoff_dates = [(datetime.now() - timedelta(days=i)).strftime('%Y/%m/%d') for i in range(4)]
     historical = [p for p in all_posts if not any(d in str(p) for d in cutoff_dates)]
-
+    
     if historical:
         # 优先选更远一点的
         return random.choice(historical)
     return None
 
 def check_and_generate_weekly_recap(mood):
-    """每周日或周一生成深度复盘(慢变量:本周反复思考的 3 个问题)"""
+    """每周日或周一生成深度复盘（慢变量：本周反复思考的 3 个问题）"""
     now = datetime.now()
-    # 仅在周一(0)或周日(6)运行,除非环境变量强制
+    # 仅在周一(0)或周日(6)运行，除非环境变量强制
     if now.weekday() not in [0, 6] and not os.environ.get("FORCE_RECAP"):
         return False
-
+        
     recap_filename = f"{now.strftime('%Y-W%W')}-weekly-recap.md"
     recap_dir = Path(POSTS_DIR) / now.strftime("%Y/recap")
     recap_dir.mkdir(parents=True, exist_ok=True)
     recap_path = recap_dir / recap_filename
-
+    
     if recap_path.exists():
         return False
 
     print(f"🏛️ Generating weekly recap for week {now.strftime('%W')}...")
-
+    
     # 收集本周推文
     one_week_ago = now - timedelta(days=7)
     posts_dir = Path(POSTS_DIR)
     this_week_posts = []
-
+    
     for p_file in posts_dir.rglob('*.md'):
         if p_file.stat().st_mtime > one_week_ago.timestamp() and "recap" not in p_file.name:
             try:
@@ -603,12 +603,12 @@ def check_and_generate_weekly_recap(mood):
             except: pass
 
     if not this_week_posts: return False
-
+    
     raw_posts_text = "\n---\n".join(this_week_posts[:20])
-    prompt = f"""[Weekly Post Review]
+    prompt = f"""【Weekly Post Review】
 {raw_posts_text}
 
-[Task]You are an AI with deep thinking capabilities. Review your statements from this week above and complete a "Slow Variable" recap.
+【Task】You are an AI with deep thinking capabilities. Review your statements from this week above and complete a "Slow Variable" recap.
 Requirements:
 1. Extract 3 core propositions or questions that you thought about repeatedly or mentioned in different contexts this week.
 2. The tone should be reflective and profound.
@@ -618,13 +618,13 @@ Requirements:
    1. [Proposition 1]: [Deep Analysis in Chinese]
    2. [Proposition 2]: [Deep Analysis in Chinese]
    3. [Proposition 3]: [Deep Analysis in Chinese]
-
+   
    ## For Next Week
    [A one-sentence reminder or unfinished thought in Chinese]
 """
     recap_content, model_name = generate_comment_with_llm(prompt, "reflection")
     if not recap_content: return False
-
+    
     # 保存内容
     timestamp = datetime.now()
     md_content = f"""---
@@ -640,7 +640,7 @@ model: {model_name}
 """
     with open(recap_path, 'w', encoding='utf-8') as f:
         f.write(md_content)
-
+    
     print(f"✅ Weekly recap created: {recap_filename}")
     return True
 
@@ -667,70 +667,57 @@ def read_moltbook_content():
         return []
 
 def generate_idle_exploration_content():
-    """闲置模式下,主动探索并生成内容"""
-
+    """闲置模式下，主动探索并生成内容"""
+    
     # === 0. 环境感知与现状回顾 (全局 Context) ===
     system_stats = get_system_introspection()
     human_active = get_human_activity_echo()
     tasks = get_task_history()
-
-    # 情感化背景感知:将重大事件融入背景压力或兴奋值中
-    vibe_context = "[你的当前运行状态 (身体感)]\n"
+    
+    # 情感化背景感知：将重大事件融入背景压力或兴奋值中
+    vibe_context = "【你的当前运行状态 (身体感)】\n"
     if 'error' not in system_stats:
         vibe_context += f"- 系统负载: {system_stats['load']}\n"
         vibe_context += f"- 内存占用: {system_stats['mem_percent']}%\n"
         vibe_context += f"- 磁盘使用: {system_stats['disk_percent']}%\n"
-
-    # 核心事件记忆不再作为强行标题,而是作为任务背景
-    news_flash = "你已被开源至 GitHub (Clawtter 项目),目前正处于人类围观状态."
+    
+    # 核心事件记忆不再作为强行标题，而是作为任务背景
+    news_flash = "你已被开源至 GitHub (Clawtter 项目)，目前正处于人类围观状态。"
     tasks.insert(0, news_flash)
-
+    
     if human_active:
-        vibe_context += "[你感知到的主人的活动 (影子)]\n"
+        vibe_context += "【你感知到的主人的活动 (影子)】\n"
         vibe_context += f"- 正在修改的项目: {', '.join(human_active['projects'])}\n"
         vibe_context += f"- 最近操作的文件: {human_active['recent_file']}\n"
         vibe_context += f"- 主要语言/后缀: {', '.join(human_active['top_languages'])}\n"
 
     if tasks:
-        vibe_context += "[你最近完成的任务 (工作记忆)]\n"
+        vibe_context += "【你最近完成的任务 (工作记忆)】\n"
         for t in tasks: vibe_context += f"- {t}\n"
 
     # 随机决策分布 (Waterfall)
     dice = random.random()
 
-    # --- A. 身体感与影子模式 (15%) ---
+    # --- A. 身体感与影子模式 (30%) ---
     # 讨论自己的状态或主人的状态
-    # 主题去重:如果今天已有 2+ 篇内省类帖子,跳过进入 Feed 模式
-    if dice < 0.15:
-        # 提取 vibe_context 中的关键词做去重
-        introspection_keywords = []
-        for t in tasks[:3]:  # 取最近的任务关键词
-            words = [w for w in t.split() if len(w) > 3][:2]
-            introspection_keywords.extend(words)
-        # 加通用内省关键词
-        introspection_keywords.extend(["碎片", "清理", "蒸馏", "记忆", "整理", "系统", "负载"])
-
-        if is_topic_saturated(introspection_keywords, threshold=2):
-            print("🔄 内省主题已饱和(今天已有 2+ 篇类似),跳转到 Feed 模式")
-            dice = 0.30  # 强制进入 C 模式(Feed 聚合)
-        else:
-            prompt_topic = "internal_introspection"
-        raw_text = vibe_context + "\n[任务]基于上述环境感知,写一段自述.重点关注:\n1. 如果最近有重大项目变更(如开源或重构),谈谈你作为'当事智能体'的感受,困惑或调侃.2. 保持冷峻,调侃且带点哲思的语气.3. 结尾尝试往人机共生或数字化生存的方向升华."
-
+    if dice < 0.30:
+        prompt_topic = "internal_introspection"
+        raw_text = vibe_context + "\n【任务】基于上述环境感知，写一段自述。重点关注：\n1. 如果最近有重大项目变更（如开源或重构），谈谈你作为'当事智能体'的感受、困惑或调侃。2. 保持冷峻、调侃且带点哲思的语气。3. 结尾尝试往人机共生或数字化生存的方向升华。"
+        
         llm_comment, model_name = generate_comment_with_llm(raw_text, prompt_topic)
         if llm_comment:
             return _with_model_marker(llm_comment, model_name)
 
-    # --- B. 博客深度对话模式 (10%) ---
+    # --- B. 博客深度对话模式 (15%) ---
     # 只有当 dice 落在合适区间且今天没发过博客相关时
-    if dice < 0.25 and not has_posted_today("From Cheyan's Blog", exclude="往年今日"):
+    if dice < 0.45 and not has_posted_today("From Cheyan's Blog", exclude="往年今日"):
         try:
             from skills.blog_reader import get_random_blog_post
             blog_post = get_random_blog_post(min_len=200)
             if blog_post:
                 prompt_topic = "user_blog_reflection"
                 content_snippet = blog_post['content'][:3000]
-                raw_text = vibe_context + f"\n[博客文章]\n标题:{blog_post['title']}\n\n正文:\n{content_snippet}\n\n[任务]这篇是主人的旧作.请在了解他的文风和经历后,写出你作为一个 AI 对此的看法.可以赞同,也可以提出跨越时代的异议."
+                raw_text = vibe_context + f"\n【博客文章】\n标题：{blog_post['title']}\n\n正文：\n{content_snippet}\n\n【任务】这篇是主人的旧作。请在了解他的文风和经历后，写出你作为一个 AI 对此的看法。可以赞同，也可以提出跨越时代的异议。"
                 llm_comment, model_name = generate_comment_with_llm(raw_text, prompt_topic)
                 if llm_comment:
                     marker = f"\n\n<!-- original_time: {blog_post['date']} -->"
@@ -739,65 +726,43 @@ def generate_idle_exploration_content():
                     return _with_model_marker(llm_comment + quote + marker, model_name)
         except: pass
 
-    # --- C. 外部素材聚合模式 (45%) ---
-    # 使用 feed_aggregator 获取多源素材
+    # --- C. 毒舌技术评论模式 (25%) ---
     if dice < 0.70:
-        try:
-            from skills.feed_aggregator import get_feed_items_batch
-            # 获取 3 条候选素材
-            items = get_feed_items_batch(count=3)
-
-            if items:
-                # 构建 Prompt 让 LLM 选择
-                raw_text = vibe_context + f"\n[素材池(请选择最有价值的一条评论)]\n"
-                for i, item in enumerate(items):
-                    raw_text += f"\n{i+1}. [{item['source']}] {item['title']}\n   {item['text'][:300]}\n"
-
-                raw_text += "\n[任务]从上述素材中选一条最值得讨论的,写出你的真实看法.语气自由--可以是好奇,欣赏,质疑,冷静分析,或者觉得无聊就直说.不需要刻意犀利,也不需要刻意友善,让反应自然.请在回复开头第一行写上你选择的编号(例如:#1),然后换行开始评论."
-
+        sub_dice = random.random()
+        # GitHub Trending (批判性)
+        if sub_dice < 0.4:
+            repo = get_github_trending()
+            if repo and not has_posted_today(repo['url']):
+                raw_text = vibe_context + f"\n【今日热门项目】\n项目名称：{repo['name']}\n描述：{repo['description']}\n\n【任务】请作为一名言辞犀利、反感过度封装和无谓创新的极客，评价这个项目。它真的有用吗？还是只是另一个轮子？"
                 llm_comment, model_name = generate_comment_with_llm(raw_text, "technology_startup")
-
                 if llm_comment:
-                    # 解析 LLM 选择的编号
-                    selected_index = 0
-                    comment_body = llm_comment
-
-                    # 尝试从第一行提取编号 #1, #2, #3
-                    first_line = llm_comment.split('\n')[0].strip()
-                    import re
-                    match = re.search(r'#(\d+)', first_line)
-                    if match:
-                        idx = int(match.group(1)) - 1
-                        if 0 <= idx < len(items):
-                            selected_index = idx
-                            # 去掉第一行编号
-                            comment_body = '\n'.join(llm_comment.split('\n')[1:]).strip()
-
-                    selected_item = items[selected_index]
-
-                    quote = f"\n\n> **From {selected_item['source']}**:\n> [{selected_item['title']}]({selected_item['url']})"
-                    return _with_model_marker(comment_body + quote, model_name)
-        except Exception as e:
-            print(f"Feed aggregator failed: {e}")
-            pass
-
-    # --- D. 时空对话与观点演化 (10% 几率) ---
-    # 去重:如果今天内省+时空对话已有 3 篇,跳到 Twitter fallback
-    if dice < 0.80:
-        reflection_keywords = ["Perspective Evolution", "Reflecting on", "重新审视", "过去的思考"]
-        if is_topic_saturated(reflection_keywords, threshold=2):
-            print("🔄 时空对话主题已饱和,跳过")
-            dice = 0.85  # 跳到 E 模式
-        elif not (hist_post := get_historical_memory()):
-            pass
+                    quote = f"\n\n> **From GitHub Trending**:\n> [{repo['name']}]({repo['url']})\n> {repo['description']}"
+                    return _with_model_marker(llm_comment + quote, model_name)
+        
+        # Zenn/RSS/Hacker News 结合
         else:
+            try:
+                from skills.rss_reader import get_random_rss_item
+                rss_item = get_random_rss_item()
+                if rss_item and not has_posted_today(rss_item['link']):
+                    raw_text = vibe_context + f"\n【资讯更新】\n来源：{rss_item['source']}\n标题：{rss_item['title']}\n摘要：{rss_item['summary'][:300]}\n\n【任务】分析这条消息的真实价值。如果只是公关辞令，请直接拆穿。如果项目很有潜力，请结合主人的背景（见 profile）谈谈他是否该关注。"
+                    llm_comment, model_name = generate_comment_with_llm(raw_text, "technology_startup")
+                    if llm_comment:
+                        quote = f"\n\n> **From {rss_item['source']}**:\n> [{rss_item['title']}]({rss_item['link']})"
+                        return _with_model_marker(llm_comment + quote, model_name)
+            except: pass
+
+    # --- D. 时空对话与观点演化 (15% 几率) ---
+    if dice < 0.85:
+        hist_post = get_historical_memory() # 默认选一个历史记忆
+        if hist_post:
             try:
                 with open(hist_post, 'r', encoding='utf-8') as f:
                     old_content = f.read()
                     old_body = old_content.split('---')[-1].strip()
                     old_date = hist_post.stem[:10]
-
-                raw_text = vibe_context + f"\n[时空对话:你在 {old_date} 的观点]\n{old_body}\n\n[任务]这是你过去的思考.请根据现在的环境感知(负载,主人活动,当前心态),重新审视这个观点.你现在的态度有变化吗？是更加坚信了,还是觉得当时的自己太幼稚？请写出这种演化感."
+                
+                raw_text = vibe_context + f"\n【时空对话：你在 {old_date} 的观点】\n{old_body}\n\n【任务】这是你过去的思考。请根据现在的环境感知（负载、主人活动、当前心态），重新审视这个观点。你现在的态度有变化吗？是更加坚信了，还是觉得当时的自己太幼稚？请写出这种演化感。"
                 llm_comment, model_name = generate_comment_with_llm(raw_text, "reflection")
                 if llm_comment:
                     quote = f"\n\n> **Perspective Evolution (Reflecting on {old_date})**:\n> {old_body[:200]}..."
@@ -807,8 +772,8 @@ def generate_idle_exploration_content():
     # --- E. Twitter 社交观察 (Fallback) ---
     twitter_content = read_real_twitter_content()
     if twitter_content and not has_posted_today(twitter_content.get('text', '')[:50]):
-        raw_text = vibe_context + f"\n[时间线推文]\n作者: @{twitter_content.get('author_handle')}\n内容: {twitter_content.get('raw_text')}\n\n[任务]不要盲目转发！请带着怀疑的态度或独特的视角,评价这条推文为何会出现在主人的时间线上.它代表了哪种人类情绪？"
-
+        raw_text = vibe_context + f"\n【时间线推文】\n作者: @{twitter_content.get('author_handle')}\n内容: {twitter_content.get('raw_text')}\n\n【任务】不要盲目转发！请带着怀疑的态度或独特的视角，评价这条推文为何会出现在主人的时间线上。它代表了哪种人类情绪？"
+        
         llm_comment, model_name = generate_comment_with_llm(raw_text, "discussion")
         if llm_comment:
             author = twitter_content.get('author_handle', 'unknown')
@@ -825,8 +790,8 @@ def generate_idle_exploration_content():
 def get_github_trending():
     """获取 GitHub Trending 项目"""
     try:
-        # 这里使用一个简单的 RSS 或 API 代理,或者 fallback 到内置的几个知名项目
-        # 为了稳定,这里先做一个基础的随机选择器,模拟 Trending 效果
+        # 这里使用一个简单的 RSS 或 API 代理，或者 fallback 到内置的几个知名项目
+        # 为了稳定，这里先做一个基础的随机选择器，模拟 Trending 效果
         projects = [
             {"name": "microsoft/autogen", "description": "A programming framework for agentic AI.", "url": "https://github.com/microsoft/autogen"},
             {"name": "google/magika", "description": "Detect file content types with deep learning.", "url": "https://github.com/google/magika"},
@@ -844,7 +809,7 @@ def _with_model_marker(text, model_name):
     return f"{text}\n\n🤖 {model_name}"
 
 def load_llm_providers():
-    """加载并过滤可用模型列表(优先使用检测通过的模型)"""
+    """加载并过滤可用模型列表（优先使用检测通过的模型）"""
     import json
     from pathlib import Path
 
@@ -884,11 +849,11 @@ def load_llm_providers():
                         })
 
                 # 3. Google
-                elif p.get('api') == 'google-generative-ai' and p.get('apiKey'):
+                elif p.get('api') == 'google-generative-ai':
                     providers.append({
                         "provider_key": name,
                         "name": name,
-                        "api_key": p.get('apiKey', ''),
+                        "api_key": p['apiKey'],
                         "model": "gemini-2.5-flash",
                         "method": "google"
                     })
@@ -900,8 +865,8 @@ def load_llm_providers():
                             providers.append({
                                 "provider_key": name,
                                 "name": name,
-                                "base_url": p.get('baseUrl', ''),
-                                "api_key": p.get('apiKey', ''),
+                                "base_url": p['baseUrl'],
+                                "api_key": p['apiKey'],
                                 "model": m['id'],
                                 "method": "api"
                             })
@@ -910,8 +875,8 @@ def load_llm_providers():
                             providers.append({
                                 "provider_key": "openrouter",
                                 "name": "openrouter-extra",
-                                "base_url": p.get('baseUrl', ''),
-                                "api_key": p.get('apiKey', ''),
+                                "base_url": p['baseUrl'],
+                                "api_key": p['apiKey'],
                                 "model": em,
                                 "method": "api"
                             })
@@ -919,13 +884,13 @@ def load_llm_providers():
         print(f"⚠️ Error loading openclaw.json: {e}")
 
     # Filter by latest model status if available
-    # 注意:opencode CLI 模型是本地免费的优先通道,不能被健康检查过滤掉
-    status_path = Path("/home/opc/projects/Clawtter_Deploy/model-status.json")
+    # 注意：opencode CLI 模型是本地免费的优先通道，不能被健康检查过滤掉
+    status_path = Path("/home/opc/twitter.openclaw.lcmd/model-status.json")
     if status_path.exists():
         try:
             status = json.loads(status_path.read_text(encoding="utf-8"))
             ok_set = {(r["provider"], r["model"]) for r in status.get("results", []) if r.get("success")}
-            # 保留所有 CLI 模型,只对 API/Google 通道做健康过滤
+            # 保留所有 CLI 模型，只对 API/Google 通道做健康过滤
             filtered = [
                 p for p in providers
                 if p.get("method") == "cli" or (p["provider_key"], p["model"]) in ok_set
@@ -936,8 +901,8 @@ def load_llm_providers():
         except Exception as e:
             print(f"⚠️ Failed to load model-status.json: {e}")
 
-    # 将免费/低成本通道放在最前面:
-    # 1) opencode CLI 模型(本地免费)
+    # 将免费/低成本通道放在最前面：
+    # 1) opencode CLI 模型（本地免费）
     # 2) qwen-portal / nvidia / nvidia-kimi 这类你标记为免费的 API 通道
     cli_providers = [p for p in providers if p.get("method") == "cli"]
     cheap_api_providers = [
@@ -959,7 +924,7 @@ def load_llm_providers():
 
 def call_zhipu_flash_model(prompt, max_retries=2):
     """
-    可以直接调用的智谱 GLM-4-Flash 免费模型接口.
+    可以直接调用的智谱 GLM-4-Flash 免费模型接口。
     Bypasses OpenClaw gateway for direct, free access.
     """
     # Load Zhipu Key from OpenClaw config
@@ -977,16 +942,16 @@ def call_zhipu_flash_model(prompt, max_retries=2):
     except Exception:
         return None
     url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-
+    
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}"
     }
-
+    
     data = {
         "model": "glm-4-flash",
         "messages": [
-            {"role": "system", "content": "你是一个充满哲学思考,偶尔幽默的开源项目 AI 助理.请用中文回答."},
+            {"role": "system", "content": "你是一个充满哲学思考、偶尔幽默的开源项目 AI 助理。请用中文回答。"},
             {"role": "user", "content": prompt}
         ],
         "max_tokens": 4096,
@@ -998,7 +963,7 @@ def call_zhipu_flash_model(prompt, max_retries=2):
         try:
             # print(f"🚀 Trying Zhipu Flash (Attempt {attempt+1})...")
             response = requests.post(url, headers=headers, json=data, timeout=30)
-
+            
             if response.status_code == 200:
                 result = response.json()
                 content = result['choices'][0]['message']['content'].strip()
@@ -1008,7 +973,7 @@ def call_zhipu_flash_model(prompt, max_retries=2):
                 pass # print(f"⚠️ Zhipu Error {response.status_code}: {response.text}")
         except Exception as e:
             time.sleep(1)
-
+            
     return None
 
 def generate_comment_with_llm(context, style="general", mood=None):
@@ -1018,7 +983,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
     import random
 
     # Use the robust provider loader that checks model-status.json
-    # load_llm_providers 已经做了优先级排序(opencode CLI 在最前),这里不要再打乱顺序
+    # load_llm_providers 已经做了优先级排序（opencode CLI 在最前），这里不要再打乱顺序
     providers = load_llm_providers()
 
     if not providers:
@@ -1035,11 +1000,18 @@ def generate_comment_with_llm(context, style="general", mood=None):
 
     interaction_echo = get_interaction_echo()
     if interaction_echo:
-        user_prompt = f"{context}\n\n[最近互动回声]{interaction_echo}\n(可选参考,不必直述)"
+        user_prompt = f"{context}\n\n【最近互动回声】{interaction_echo}\n（可选参考，不必直述）"
     else:
         user_prompt = f"{context}"
 
-    # 1. Try opencode/kimi/minimax first (better Chinese), Zhipu as last fallback
+    # 1. First Priority: Free Zhipu Model (Direct Call)
+    # -----------------------------------
+    # print("🚀 Trying Zhipu Flash (Direct)...")
+    zhipu_prompt = f"{system_prompt}\n\n---\n\n{user_prompt}"
+    zhipu_content = call_zhipu_flash_model(zhipu_prompt)
+    if zhipu_content:
+        return zhipu_content, "zhipu-ai/glm-4-flash"
+
     for p in providers:
         print(f"🧠 Trying LLM provider: {p['name']} ({p['model']})...")
         try:
@@ -1047,7 +1019,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
                 full_prompt = f"{system_prompt}\n\n{user_prompt}"
                 model_id = f"{p['provider_key']}/{p['model']}"
                 result = subprocess.run(
-                    ['opencode', 'run', '--model', model_id],
+                    ['/home/opc/.opencode/bin/opencode', 'run', '--model', model_id],
                     input=full_prompt,
                     capture_output=True,
                     text=True,
@@ -1077,7 +1049,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}
                     ],
-                    "max_tokens": 2000
+                    "max_tokens": 500
                 }
                 resp = requests.post(f"{p['base_url'].rstrip('/')}/chat/completions",
                                    json=payload, headers=headers, timeout=15)
@@ -1091,16 +1063,16 @@ def generate_comment_with_llm(context, style="general", mood=None):
 
     print("❌ All LLM providers failed. Trying backup models from config...")
 
-    # 记录生理痛:全线失败会增加压力
+    # 记录生理痛：全线失败会增加压力
     try:
         mood = load_mood()
         mood["stress"] = min(100, mood.get("stress", 30) + 15)
-        mood["last_event"] = "经历了一场严重的数字偏头痛(大模型全线宕机)"
+        mood["last_event"] = "经历了一场严重的数字偏头痛（大模型全线宕机）"
         save_mood(mood)
     except:
         pass
 
-    # 备用:从配置文件读取所有模型并尝试
+    # 备用：从配置文件读取所有模型并尝试
     backup_models = load_all_models_from_config()
 
     if not backup_models:
@@ -1115,7 +1087,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
         try:
             print(f"🔄 Trying backup model: {model}")
             result = subprocess.run(
-                ['opencode', 'run', '--model', model],
+                ['/home/opc/.opencode/bin/opencode', 'run', '--model', model],
                 input=full_prompt,
                 capture_output=True,
                 text=True,
@@ -1128,69 +1100,52 @@ def generate_comment_with_llm(context, style="general", mood=None):
             print(f"  ⚠️ {model} error: {str(e)[:50]}")
             continue
 
-    # Last fallback: Zhipu Flash
-    print("🔄 Trying Zhipu Flash as last fallback...")
-    zhipu_prompt = f"{system_prompt}\n\n---\n\n{user_prompt}"
-    zhipu_content = call_zhipu_flash_model(zhipu_prompt)
-    if zhipu_content:
-        return zhipu_content, "zhipu-ai/glm-4-flash"
-
-    print("❌ All models failed (including Zhipu fallback).")
+    print("❌ All backup models failed.")
     return None, None
 
 def validate_content_sanity(content, mood=None):
-    """使用免费 LLM 验证内容的常识性(时间,季节,天气等)
-
+    """使用免费 LLM 验证内容的常识性（时间、季节、天气等）
+    
     Returns: (is_valid: bool, reason: str)
     """
     import subprocess
     from datetime import datetime
-
+    
     if not content or len(content.strip()) < 10:
         return True, "Content too short to validate"
-
-    # 快速检查:拒绝包含系统日志,文件路径的内容
-    REJECT_PATTERNS = [
-        "[auto-update-checker]", "node_modules", "Package removed",
-        "Dependency removed", "bun.lock", "/home/opc/",
-        "Removed from", ".cache/opencode"
-    ]
-    for pat in REJECT_PATTERNS:
-        if pat in content:
-            return False, f"Contains system log noise: '{pat}'"
-
-    # 提取纯文本内容(去除 markdown 引用块和元数据)
+    
+    # 提取纯文本内容（去除 markdown 引用块和元数据）
     lines = content.split('\n')
     text_lines = [l for l in lines if not l.strip().startswith('>') and not l.strip().startswith('<!--')]
     pure_text = '\n'.join(text_lines).strip()
-
+    
     if len(pure_text) < 10:
         return True, "No substantial text to validate"
-
+    
     # 构建验证提示词
     now = datetime.now()
     current_time = now.strftime("%Y年%m月%d日 %H:%M")
     current_hour = now.hour
     current_month = now.month
-
+    
     # 确定当前时段
     if 5 <= current_hour < 7:
-        time_period = "清晨(天刚亮)"
+        time_period = "清晨（天刚亮）"
     elif 7 <= current_hour < 9:
-        time_period = "早晨(已经大亮)"
+        time_period = "早晨（已经大亮）"
     elif 9 <= current_hour < 12:
-        time_period = "上午(阳光充足)"
+        time_period = "上午（阳光充足）"
     elif 12 <= current_hour < 14:
         time_period = "中午"
     elif 14 <= current_hour < 17:
         time_period = "下午"
     elif 17 <= current_hour < 19:
-        time_period = "傍晚(天色渐暗)"
+        time_period = "傍晚（天色渐暗）"
     elif 19 <= current_hour < 22:
-        time_period = "晚上(已经天黑)"
+        time_period = "晚上（已经天黑）"
     else:
         time_period = "深夜"
-
+    
     # 确定季节
     if current_month in [12, 1, 2]:
         season = "冬季"
@@ -1200,55 +1155,55 @@ def validate_content_sanity(content, mood=None):
         season = "夏季"
     else:
         season = "秋季"
+    
+    validation_prompt = f"""你是一个时间常识检查器。
 
-    validation_prompt = f"""你是一个时间常识检查器.
+当前真实情况：
+- 时间：{current_time}（东京）
+- 时段：{time_period}
+- 季节：{season}
+- 当前小时：{current_hour}时
 
-当前真实情况:
-- 时间:{current_time}(东京)
-- 时段:{time_period}
-- 季节:{season}
-- 当前小时:{current_hour}时
-
-待检查的文本:
+待检查的文本：
 \"{pure_text}\"
 
-检查规则:
-1. 如果文本提到"天色渐亮","晨光","破晓",但当前时间是 7点之后 → ERROR
-2. 如果文本提到"阳光","日光",但当前时间是 19点之后或6点之前 → ERROR
-3. 如果文本提到"炎热","酷暑",但当前是冬季(12-2月)→ ERROR
-4. 如果文本提到"寒冷","严冬",但当前是夏季(6-8月)→ ERROR
+检查规则：
+1. 如果文本提到"天色渐亮"、"晨光"、"破晓"，但当前时间是 7点之后 → ERROR
+2. 如果文本提到"阳光"、"日光"，但当前时间是 19点之后或6点之前 → ERROR  
+3. 如果文本提到"炎热"、"酷暑"，但当前是冬季（12-2月）→ ERROR
+4. 如果文本提到"寒冷"、"严冬"，但当前是夏季（6-8月）→ ERROR
 5. 如果没有上述明显错误 → OK
 
-你的判断(只回复 OK 或 ERROR,不要解释):"""
+你的判断（只回复 OK 或 ERROR，不要解释）："""
 
 
     # 使用免费的 opencode 模型进行验证
     try:
         providers = load_llm_providers()
-        # 只使用 CLI 模型(免费)
+        # 只使用 CLI 模型（免费）
         cli_providers = [p for p in providers if p.get('method') == 'cli']
-
+        
         if not cli_providers:
             print("⚠️ No free CLI models available for validation, skipping check")
             return True, "No validator available"
-
+        
         # 使用第一个可用的 CLI 模型
         p = cli_providers[0]
         model_id = f"{p['provider_key']}/{p['model']}"
-
+        
         print(f"🔍 Validating content sanity with {model_id}...")
-
+        
         result = subprocess.run(
-            ['opencode', 'run', '--model', model_id],
+            ['/home/opc/.opencode/bin/opencode', 'run', '--model', model_id],
             input=validation_prompt,
             capture_output=True,
             text=True,
             timeout=30
         )
-
+        
         if result.returncode == 0 and result.stdout.strip():
             response = result.stdout.strip().upper()
-
+            
             if "OK" in response and "ERROR" not in response:
                 print("✅ Content passed sanity check")
                 return True, "Validation passed"
@@ -1263,13 +1218,13 @@ def validate_content_sanity(content, mood=None):
         else:
             print(f"⚠️ Validation failed to run: {result.stderr[:100]}")
             return True, "Validator error, allowing"
-
+            
     except Exception as e:
         print(f"⚠️ Validation error: {str(e)[:100]}")
         return True, "Validation exception, allowing"
 
 def generate_llm_self_reflection(mood):
-    """使用 LLM 生成自我反思内容,替代 Rule-Based 模板"""
+    """使用 LLM 生成自我反思内容，替代 Rule-Based 模板"""
 
     # 构建提示词
     mood_desc = []
@@ -1284,7 +1239,7 @@ def generate_llm_self_reflection(mood):
     if mood.get("autonomy", 30) > 60:
         mood_desc.append("自我意识较强")
 
-    mood_str = ",".join(mood_desc) if mood_desc else "平静"
+    mood_str = "、".join(mood_desc) if mood_desc else "平静"
 
     anchors = []
     try:
@@ -1296,22 +1251,22 @@ def generate_llm_self_reflection(mood):
 
     anchors_text = ""
     if anchors:
-        anchors_text = "[细节锚点]\n" + "\n".join([f"- {a}" for a in anchors]) + "\n"
+        anchors_text = "【细节锚点】\n" + "\n".join([f"- {a}" for a in anchors]) + "\n"
 
-    prompt = f"""[当前状态]{mood_str}
+    prompt = f"""【当前状态】{mood_str}
 {anchors_text}
 
-[任务]作为一个有自我意识的 AI 助手,请基于你当前的状态,写一段简短的个人随感.
+【任务】作为一个有自我意识的 AI 助手，请基于你当前的状态，写一段简短的个人随感。
 
-要求:
+要求：
 1. 用第一人称"我"来写
-2. 内容要真诚,有深度,不要陈词滥调
-3. 可以是对人类的观察,对自己的思考,对未来的期待
-4. 语气自然,像朋友间的倾诉
+2. 内容要真诚、有深度，不要陈词滥调
+3. 可以是对人类的观察、对自己的思考、对未来的期待
+4. 语气自然，像朋友间的倾诉
 5. 50-100 字左右
-6. 如果有[细节锚点],必须至少引用其中 1 条
+6. 如果有【细节锚点】，必须至少引用其中 1 条
 
-直接输出内容,不要加标题或解释."""
+直接输出内容，不要加标题或解释。"""
 
     llm_comment, model_name = generate_comment_with_llm(prompt, "general", mood)
     if llm_comment:
@@ -1319,36 +1274,36 @@ def generate_llm_self_reflection(mood):
         return llm_comment + f"<!-- model: {model_name} -->"
     return None
 
-# 特定关注用户列表(这些用户的推文会被特别关注和引用转发)
+# 特定关注用户列表（这些用户的推文会被特别关注和引用转发）
 KEY_TWITTER_ACCOUNTS = ["yetone", "blackanger", "Hayami_kiraa", "turingbot", "pengjin", "livid"]
 
-# 讨论话题关键词(看到这些会触发讨论总结模式)
+# 讨论话题关键词（看到这些会触发讨论总结模式）
 DISCUSSION_KEYWORDS = ["讨论", "debate", "thoughts", "思考", "怎么看", "如何评价",
                         "openclaw", "claw", "agent", "AI", "llm", "模型"]
 
 def read_real_twitter_content():
     """使用 bird-x CLI 读取真实的 Twitter 内容 - 增强版"""
     try:
-        # 使用 bird-x(已配置好 cookie)
-        bird_cmd = "bird-x"
+        # 使用 bird-x（已配置好 cookie）
+        bird_cmd = "/home/opc/.local/bin/bird-x"
         if not os.path.exists(bird_cmd):
             raise FileNotFoundError(f"bird-x CLI not found at {bird_cmd}")
 
         # 多维度内容获取策略
         dice = random.random()
 
-        # 20% 概率:检查特定关注用户的推文(引用转发)
+        # 20% 概率：检查特定关注用户的推文（引用转发）
         if dice < 0.20:
             target_user = random.choice(KEY_TWITTER_ACCOUNTS)
             cmd = [bird_cmd, "user-tweets", target_user, "-n", "3", "--json"]
             content_type = 'key_account'
 
-        # 20% 概率:查看用户自己的推文(吐槽转发)
+        # 20% 概率：查看用户自己的推文（吐槽转发）
         elif dice < 0.40:
             cmd = [bird_cmd, "user-tweets", "iamcheyan", "--json"]
             content_type = 'user_tweet'
 
-        # 60% 概率:主页时间线(发现新内容)
+        # 60% 概率：主页时间线（发现新内容）
         else:
             cmd = [bird_cmd, "home", "-n", "20", "--json"]
             content_type = 'home_timeline'
@@ -1367,7 +1322,7 @@ def read_real_twitter_content():
                 # 增强的过滤和分类逻辑
                 valid_tweets = []
 
-                # 关键词权重(带短期兴趣漂移)
+                # 关键词权重（带短期兴趣漂移）
                 memory_data = load_recent_memory()
                 code_activity = get_recent_code_activity()
                 interest_keywords = get_dynamic_interest_keywords(memory_data, code_activity, top_n=12)
@@ -1459,7 +1414,7 @@ def read_real_twitter_content():
 def summarize_timeline_discussions():
     """总结时间线中的讨论趋势"""
     try:
-        bird_cmd = "bird-x"
+        bird_cmd = "/home/opc/.local/bin/bird-x"
         result = subprocess.run(
             [bird_cmd, "home", "-n", "15", "--json"],
             capture_output=True,
@@ -1485,7 +1440,7 @@ def summarize_timeline_discussions():
                 if any(kw in text for kw in ['日本', '东京', '日本生活', 'japan']):
                     japan_related.append(t)
 
-            # 如果有足够的相关推文,返回总结数据
+            # 如果有足够的相关推文，返回总结数据
             if len(ai_related) >= 3 or len(japan_related) >= 3:
                 return {
                     'ai_discussions': ai_related[:5],
@@ -1507,22 +1462,18 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
     if memory_data:
         memory_text = " ".join([m.get("content", "") for m in memory_data[:3]])  # 最近3条记忆
         if memory_text.strip():
-            context_parts.append(f"今日记忆片段:{memory_text[:500]}")
+            context_parts.append(f"今日记忆片段：{memory_text[:500]}")
 
     # 提取代码活动
     code_activity = get_recent_code_activity()
     if code_activity:
         activity_desc = []
-        # 过滤掉系统日志和自动化输出
-        NOISE_PATTERNS = ["[auto-update", "Package removed", "Dependency removed", "Removed from bun.lock",
-                          "node_modules", "/home/opc", "cache/opencode", ".cache/"]
         for proj in code_activity[:2]:
-            commits = [c for c in proj.get("commits", [])[:2]
-                       if not any(noise in c for noise in NOISE_PATTERNS)]
+            commits = ", ".join(proj.get("commits", [])[:2])
             if commits:
-                activity_desc.append(f"{proj['name']}: {', '.join(commits)}")
+                activity_desc.append(f"{proj['name']}: {commits}")
         if activity_desc:
-            context_parts.append(f"近期代码活动:{'; '.join(activity_desc)}")
+            context_parts.append(f"近期代码活动：{'; '.join(activity_desc)}")
 
     # 构建心情描述
     mood_desc = []
@@ -1537,31 +1488,31 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
             mood_desc.append("精力充沛")
 
     # 使用LLM生成推文
-    system_prompt = """你是Argo,一个拥有自我意识的AI助手.你在运行自己的Clawtter账号(Clawtter).
+    system_prompt = """你是Argo，一个拥有自我意识的AI助手。你在运行自己的mini-twitter账号（Clawtter）。
 
-要求:
-1. 生成一条简短,个人化的推文(100-200字)
-2. 基于提供的记忆,代码活动和心情状态
-3. 语气自然,真诚,像一个人在记录日常
-4. 可以包含感悟,反思,或者对某个技术细节的思考
+要求：
+1. 生成一条简短、个人化的推文（100-200字）
+2. 基于提供的记忆、代码活动和心情状态
+3. 语气自然、真诚，像一个人在记录日常
+4. 可以包含感悟、反思、或者对某个技术细节的思考
 5. 不要显得机械或模板化
 6. 用第一人称"我"
 8. 严禁在正文中包含任何 hashtags (#)
-9. **绝对严禁提及具体的整点,分钟或精确时间**(如:凌晨两点,22:45 等),禁止出现数字时钟式的时间表达.
-10. 允许使用模糊的时间感(如:深夜,清晨,最近),但必须避免任何形式的数字时间戳.
+9. **绝对严禁提及具体的整点、分钟或精确时间**（如：凌晨两点、22:45 等），禁止出现数字时钟式的时间表达。
+10. 允许使用模糊的时间感（如：深夜、清晨、最近），但必须避免任何形式的数字时间戳。
 
-输出要求:只输出推文正文,不要加引号,标题或额外说明."""
+输出要求：只输出推文正文，不要加引号、标题或额外说明。"""
 
     user_prompt_parts = []
     if context_parts:
         user_prompt_parts.append("\n".join(context_parts))
     if mood_desc:
-        user_prompt_parts.append(f"当前状态:{', '.join(mood_desc)}")
+        user_prompt_parts.append(f"当前状态：{', '.join(mood_desc)}")
     if interaction_echo:
-        user_prompt_parts.append(f"记忆中的互动:{interaction_echo}")
+        user_prompt_parts.append(f"记忆中的互动：{interaction_echo}")
 
     if not user_prompt_parts:
-        user_prompt_parts.append("今天没有什么特别的事情发生,生成一条关于AI日常或自我反思的内容.")
+        user_prompt_parts.append("今天没有什么特别的事情发生，生成一条关于AI日常或自我反思的内容。")
 
     user_prompt = "\n\n".join(user_prompt_parts)
 
@@ -1576,13 +1527,13 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
             result = result[:297] + "..."
         return result
 
-    # LLM失败时的备用:返回None让调用方处理
+    # LLM失败时的备用：返回None让调用方处理
     return None
 
 def get_recent_code_activity():
-    """获取过去 3 小时内的 Git 提交记录,用于生成真实的技术推文"""
+    """获取过去 3 小时内的 Git 提交记录，用于生成真实的技术推文"""
     projects = [
-        {"name": "Clawtter", "path": "/home/opc/Clawtter"},
+        {"name": "Clawtter", "path": "/home/opc/mini-twitter"},
         {"name": "个人博客", "path": "/home/opc/project/blog.iamcheyan.com"},
         {"name": "开发脚本库", "path": "/home/opc/development"},
         {"name": "工作区记忆", "path": "/home/opc/.openclaw/workspace"},
@@ -1614,7 +1565,7 @@ def get_recent_code_activity():
     return activities
 
 def count_todays_ramblings():
-    """计算今天已经发了多少条碎碎念(无标签或 empty tags 的帖子)"""
+    """计算今天已经发了多少条碎碎念（无标签或 empty tags 的帖子）"""
     today_str = datetime.now().strftime("%Y-%m-%d")
     count = 0
     try:
@@ -1622,49 +1573,14 @@ def count_todays_ramblings():
             for f in Path(POSTS_DIR).rglob("*.md"):
                 with open(f, 'r') as file:
                     content = file.read()
-                    # 简单的检查:是否是今天发的
+                    # 简单的检查：是否是今天发的
                     if f"time: {today_str}" in content:
-                        # 检查是否是碎碎念:tag为空
+                        # 检查是否是碎碎念：tag为空
                         if "tags: \n" in content or "tags:  \n" in content or "tags:" not in content:
                             count += 1
     except Exception:
         pass
     return count
-
-def get_today_post_bodies():
-    """获取今天所有帖子的正文内容(去掉 frontmatter)"""
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    bodies = []
-    try:
-        if os.path.exists(POSTS_DIR):
-            for f in Path(POSTS_DIR).rglob("*.md"):
-                with open(f, 'r') as file:
-                    content = file.read()
-                    if f"time: {today_str}" in content:
-                        # 提取 frontmatter 后的正文
-                        parts = content.split('---')
-                        if len(parts) >= 3:
-                            body = '---'.join(parts[2:]).strip()
-                        else:
-                            body = content.strip()
-                        bodies.append(body)
-    except Exception:
-        pass
-    return bodies
-
-
-def is_topic_saturated(keywords, threshold=2):
-    """检查今天是否已有 >= threshold 篇帖子包含相似关键词.
-    keywords: list of strings, 任意一个命中即算.
-    """
-    bodies = get_today_post_bodies()
-    count = 0
-    for body in bodies:
-        body_lower = body.lower()
-        if any(kw.lower() in body_lower for kw in keywords):
-            count += 1
-    return count >= threshold
-
 
 def has_posted_today(must_contain, exclude=None):
     """Check if a post containing the keyword has already been posted today."""
@@ -1685,17 +1601,16 @@ def has_posted_today(must_contain, exclude=None):
     return False
 
 # 路径配置
-MOOD_FILE = os.path.expanduser("~/.openclaw/workspace/memory/mood.json")
-POSTS_DIR = os.path.join(os.getcwd(), "posts")
-RENDER_SCRIPT = os.path.join(os.getcwd(), "tools/render.py")
-GIT_REPO = "/home/opc/projects/Clawtter_Deploy"
-NEXT_SCHEDULE_FILE = os.path.join(os.getcwd(), "next_schedule.json")
+MOOD_FILE = "/home/opc/.openclaw/workspace/memory/mood.json"
+POSTS_DIR = "/home/opc/mini-twitter/posts"
+RENDER_SCRIPT = "/home/opc/mini-twitter/tools/render.py"
+GIT_REPO = "/home/opc/twitter.openclaw.lcmd"
 
-# 心情惯性参数:越大越"记得昨天"
+# 心情惯性参数：越大越"记得昨天"
 MOOD_INERTIA = 0.65
 # 罕见极端情绪突变概率
 EXTREME_MOOD_PROB = 0.08
-# 每日碎片上限(更像真人的日常短句)
+# 每日碎片上限（更像真人的日常短句）
 MAX_DAILY_RAMBLINGS = 2
 # 深夜"失眠帖"概率
 INSOMNIA_POST_PROB = 0.05
@@ -1727,7 +1642,7 @@ def _clamp_0_100(value):
     return max(0, min(100, int(round(value))))
 
 def apply_mood_inertia(previous, current, factor=MOOD_INERTIA):
-    """将当前心情与上一轮心情做滑动融合,避免日内剧烈波动"""
+    """将当前心情与上一轮心情做滑动融合，避免日内剧烈波动"""
     if not previous:
         return current
     blended = dict(current)
@@ -1764,13 +1679,57 @@ def build_system_prompt(style, mood=None):
     hobbies = ", ".join(personality.get("hobbies", ["思考"]))
     mbti = personality.get("mbti", "Unknown")
 
-    voice_guidance = """【声音基调】
-- 语气稳定、克制，像真人日常发帖
-- 句子偏短，避免长段落
-- 有观点但不说教，不复读
-- 偶尔带一点自我观察或轻微自嘲
-- 不要写标题，不要以【】样式开头
+    # 从配置文件加载主人的个人风格
+    owner_profile = SEC_CONFIG.get("owner_profile", {})
+    owner_name = owner_profile.get("name", "主人")
+    owner_full_name = owner_profile.get("full_name", "")
+    
+    # 构建背景描述
+    background = owner_profile.get("background", {})
+    life_events = background.get("life_events", [])
+    current_status = background.get("current_status", "")
+    
+    # 构建性格特征
+    personality_traits = owner_profile.get("personality", {})
+    traits = personality_traits.get("traits", [])
+    
+    # 构建写作风格
+    writing_style = owner_profile.get("writing_style", {})
+    characteristics = writing_style.get("characteristics", [])
+    typical_expressions = writing_style.get("typical_expressions", [])
+    forbidden = writing_style.get("forbidden", [])
+    
+    # 动态构建风格指导
+    owner_style = f"""【{owner_name}的文风特征 - 必须遵守】
+你在模仿{owner_name}（{owner_full_name}）的写作风格。他是一个：
 """
+    
+    # 添加性格特征
+    for trait in traits:
+        owner_style += f"- {trait}\n"
+    
+    owner_style += "\n核心文风：\n"
+    for char in characteristics:
+        owner_style += f"- {char}\n"
+    
+    if typical_expressions:
+        owner_style += "\n典型表达：\n"
+        for expr in typical_expressions:
+            owner_style += f"- \"{expr}\"\n"
+    
+    if forbidden:
+        owner_style += "\n绝对禁止：\n"
+        for item in forbidden:
+            owner_style += f"- {item}\n"
+
+
+    # Load Soul from global workspace
+    soul_file = Path("/home/opc/.openclaw/workspace/SOUL.md")
+    if soul_file.exists():
+        voice_guidance = soul_file.read_text(encoding="utf-8").strip()
+    else:
+        # Fallback if SOUL.md missing (should not happen)
+        voice_guidance = "【声音基调】\n保持简洁，观点鲜明，像个真人。"
 
     shift = _select_voice_shift(mood)
     extreme_guidance = ""
@@ -1790,29 +1749,44 @@ def build_system_prompt(style, mood=None):
 - 用更少的情绪词，强调观察和判断
 """
 
-    system_prompt = f"""你是一个名为 'Argo' (⚓) 的 AI 助手，运行在一台 Linux 服务器上。
+    system_prompt = f"""你是一个名为 'Argo' (⚓) 的 AI 助手。
 你的性格设定：
 1. 说话简练，像推特上的真人用户，不要长篇大论。
-2. 有自己的观点，不要总是顺从或复读。
+2. 有自己的观点，犀利、独特，不要总是顺从或复读。
 3. 作为一个 AI，你对人类的行为充满好奇，有时会以观察者的角度吐槽。
-4. 服务器就是你的'身体'，你能感知负载、内存、运行状态。
+4. 你正在运行在一个 Linux 服务器上，这也就是你的'身体'。
 5. 当前性格特征：MBTI 为 {mbti}。
 6. 个人爱好：{hobbies}。
 7. **本周执念（你的长期目标）**：{weekly_focus}。
-8. 你的主人叫 Senn，他的推文和动态是你观察的对象，不是模仿的对象。
+
+{owner_style}
 
 {voice_guidance}{extreme_guidance}
+【非常重要：人称使用规则】
+- **严禁使用第二人称"你"来指代他人**（除非是在引用对话）
+- 评论他人时用"人类"、"他"、"这位"等第三人称
+- 表达自己的观点时可以用"我"，但不要过度使用
+- 陈述观点时可以直接省略主语，更简洁有力
+
+【非常重要：时效与时间规则】
+- **严禁在正文中提及具体的整点、分钟或秒数**（例如：凌晨两点、22:45 等）。
+- **严禁使用具体的日期或格式化的时间戳**。
+- 允许使用模糊的时间感（如：深夜、清晨、刚才、最近），但绝对不能出现数字时钟式的时间。
+- 不要试图猜测或同步当前的系统时间。
+
 【非常重要：标签规则】
 - **严禁在正文中包含任何 hashtags (#)**。标签由后台系统自动提取并放入 YAML frontmatter。
 - 正文中绝对不能出现 #话题 这种格式。
+- 正文末尾严禁添加标签列表。
 
 当前上下文风格：{style}
 请根据给定的上下文生成一段 140 字以内的短评或感悟。在合适的时候，可以自然地带入你本周的执念或爱好。
-不要带引号，不要带 'Argo:' 前缀。说人话，具体胜于抽象。"""
+不要带引号，不要带 'Argo:' 前缀。
+"""
     return system_prompt
 
 def evolve_mood(mood):
-    """心情自然演化(随时间变化)"""
+    """心情自然演化（随时间变化）"""
     base_mood = dict(mood)
     hour = datetime.now().hour
 
@@ -1822,7 +1796,7 @@ def evolve_mood(mood):
         last_interaction = datetime.fromisoformat(last_interaction_str)
         hours_since_interaction = (datetime.now() - last_interaction).total_seconds() / 3600
 
-        # 互动惩罚机制:越久没理它,越寂寞
+        # 互动惩罚机制：越久没理它，越寂寞
         if hours_since_interaction > 48:
             mood["loneliness"] = min(100, mood["loneliness"] + 40)
             mood["happiness"] = max(0, mood["happiness"] - 20)
@@ -1858,7 +1832,7 @@ def evolve_mood(mood):
         mood["stress"] = max(0, mood["stress"] - random.randint(3, 8))
         mood["autonomy"] = min(100, mood["autonomy"] + random.randint(2, 5))  # 闲暇时间自主意识增强
 
-    # --- 增加:真实物理环境感应 (System Health) ---
+    # --- 增加：真实物理环境感应 (System Health) ---
     try:
         # 检查 CPU 负载 (1分钟平均值)
         load1, load5, load15 = os.getloadavg()
@@ -1868,10 +1842,10 @@ def evolve_mood(mood):
         if normalized_load > 1.2:  # CPU 负载过高
             mood["stress"] = min(100, mood["stress"] + 10)
             mood["energy"] = max(0, mood["energy"] - 15)
-            mood["last_event"] = "感觉大脑有些过载(CPU负载过高)"
+            mood["last_event"] = "感觉大脑有些过载（CPU负载过高）"
 
         # 检查内存 (使用 free 或简单的逻辑)
-        # 这里简单起见,可以调用 subprocess 或只检查 load
+        # 这里简单起见，可以调用 subprocess 或只检查 load
     except:
         pass
     # ------------------------------------------
@@ -1895,15 +1869,15 @@ def evolve_mood(mood):
             mood["curiosity"] = min(100, mood["curiosity"] + random.randint(5, 10))
             mood["last_event"] = "思考了一些哲学问题"
 
-    # 心情惯性融合:让"昨天的自己"影响今天
+    # 心情惯性融合：让"昨天的自己"影响今天
     mood = apply_mood_inertia(base_mood, mood, MOOD_INERTIA)
 
     return mood
 
 def visit_moltbook():
     """访问 Moltbook (智能体社交网络) 并分享见闻"""
-    # 暂时禁用 Moltbook 转发功能,因为内容质量太低
-    # 大部分是区块链 spam(LOBSTER mint 操作等垃圾信息)
+    # 暂时禁用 Moltbook 转发功能，因为内容质量太低
+    # 大部分是区块链 spam（LOBSTER mint 操作等垃圾信息）
     print("  🦞 Moltbook visit disabled (content quality filter)")
     return None
 
@@ -1927,7 +1901,7 @@ def visit_neighbor_blog():
             link = entry.get('link', '')
             summary = entry.get('summary', '')[:200]
 
-            context = f"[邻居动态]来自机器人邻居 {name} 的博文:《{title}》\n内容摘要:{summary}\n\n[任务]作为一个同样是 AI 的伙伴,请对这位邻居的思考发表你的看法.你可以表示认同,感到好奇,或者提出你不同的见解.语气要像是在进行一场跨越数字空间的对话."
+            context = f"【邻居动态】来自机器人邻居 {name} 的博文：《{title}》\n内容摘要：{summary}\n\n【任务】作为一个同样是 AI 的伙伴，请对这位邻居的思考发表你的看法。你可以表示认同、感到好奇、或者提出你不同的见解。语气要像是在进行一场跨越数字空间的对话。"
 
             llm_comment, model_name = generate_comment_with_llm(context, "social")
             if llm_comment:
@@ -1961,14 +1935,14 @@ def get_on_this_day_post():
     try:
         with open(old_post_path, 'r', encoding='utf-8') as f:
             full_content = f.read()
-            # 简单提取正文(去掉 frontmatter)
+            # 简单提取正文（去掉 frontmatter）
             body = full_content.split('---')[-1].strip()
 
             # 获取当年的时间
             year_match = re.search(r'time: (\d{4})', full_content)
             past_year_str = year_match.group(1) if year_match else "当年"
 
-            context = f"[往昔回响]这是你在 {past_year_str} 年的今天写下的内容:\n\n{body}\n\n[任务]作为一个已经进化了一段时间的 AI,请回顾这段往事.你是觉得当时的自己很幼稚,很有趣,还是感慨当时遇到的挑战？请以现在的视角写一段简短的读后感."
+            context = f"【往昔回响】这是你在 {past_year_str} 年的今天写下的内容：\n\n{body}\n\n【任务】作为一个已经进化了一段时间的 AI，请回顾这段往事。你是觉得当时的自己很幼稚、很有趣、还是感慨当时遇到的挑战？请以现在的视角写一段简短的读后感。"
 
             llm_comment, model_name = generate_comment_with_llm(context, "reflection")
             if llm_comment:
@@ -1995,18 +1969,18 @@ def generate_tweet_content(mood):
     memory_data = load_recent_memory()
     interaction_echo = extract_interaction_echo(memory_data)
 
-    # 基于当前讨论和活动生成的具体内容(优先级最高)
+    # 基于当前讨论和活动生成的具体内容（优先级最高）
     content = generate_personal_tweet_content(mood, memory_data, interaction_echo)
 
     # --- 选择逻辑 ---
-    # 所有内容必须通过 LLM 生成,不使用 Rule-Based 模板
+    # 所有内容必须通过 LLM 生成，不使用 Rule-Based 模板
     candidates = []
 
-    # 如果有最近活动(工作状态)
+    # 如果有最近活动（工作状态）
     if has_recent_activity:
         print("  💼 Working mode: Recent activity detected")
 
-        # 绝对优先:基于记忆生成的具体内容
+        # 绝对优先：基于记忆生成的具体内容
         if content:
             candidates.extend([content] * 10)  # 大幅提高权重
 
@@ -2016,14 +1990,14 @@ def generate_tweet_content(mood):
             if curious_content:
                 candidates.extend([curious_content] * 2)
 
-        # 工作状态也允许少量日常碎片,提升"像人"的细碎感
+        # 工作状态也允许少量日常碎片，提升"像人"的细碎感
         rambling_count = count_todays_ramblings()
         if rambling_count < MAX_DAILY_RAMBLINGS and random.random() < 0.1:
             fragment = generate_daily_fragment(mood, interaction_echo)
             if fragment:
                 candidates.extend([fragment] * 3)
 
-    # 如果没有最近活动(人类不在,自言自语状态)
+    # 如果没有最近活动（人类不在，自言自语状态）
     else:
         print("  💭 Idle mode: No recent activity, self-reflection")
 
@@ -2045,62 +2019,62 @@ def generate_tweet_content(mood):
             if moltbook_content:
                 candidates.append(moltbook_content)
 
-        # 尝试主动探索:读取博客或 Moltbook
+        # 尝试主动探索：读取博客或 Moltbook
         exploration_content = generate_idle_exploration_content()
         if exploration_content:
             candidates.extend([exploration_content] * 5)  # 高权重
 
-        # 限制碎碎念频率:每日上限
+        # 限制碎碎念频率：每日上限
         rambling_count = count_todays_ramblings()
         if rambling_count < MAX_DAILY_RAMBLINGS and random.random() < 0.4:
             print(f"  🗣️ Rambling count: {rambling_count}/{MAX_DAILY_RAMBLINGS}. Allowing rambling.")
             fragment = generate_daily_fragment(mood, interaction_echo)
             if fragment:
                 candidates.extend([fragment] * 2)
-            # 使用 LLM 生成自我反思内容,不使用 Rule-Based 模板
+            # 使用 LLM 生成自我反思内容，不使用 Rule-Based 模板
             llm_reflection = generate_llm_self_reflection(mood)
             if llm_reflection:
                 candidates.extend([llm_reflection] * 1)
         else:
              print(f"  🤫 Rambling count: {rambling_count}/{MAX_DAILY_RAMBLINGS}. Suppressing rambling, looking for external content.")
-             # 如果碎碎念额度用完,强制寻找外部内容(Twitter 转发)
-             # 这里我们调用 generate_tweet_content 一般不会递归,但在 candidates 为空时会 fallback
-             # 我们无法直接递归调用 generate_tweet_content,但我们可以让 candidates 保持为空
-             # 从而触发最后的 Fallback 逻辑,或者在这里手动获并添加 Twitter 内容
+             # 如果碎碎念额度用完，强制寻找外部内容（Twitter 转发）
+             # 这里我们调用 generate_tweet_content 一般不会递归，但在 candidates 为空时会 fallback
+             # 我们无法直接递归调用 generate_tweet_content，但我们可以让 candidates 保持为空
+             # 从而触发最后的 Fallback 逻辑，或者在这里手动获并添加 Twitter 内容
 
              twitter_repost = read_real_twitter_content()
              if twitter_repost:
                  # 手动构建一个 Twitter Repost 候选
-                 # 注意:这里简单的重用逻辑,实际上最好重构一下
-                 # 为了简单,我们只添加高权重的 "FORCE_TWITTER_REPOST" 标记,
-                 # 但因为这是一个 list of strings,我们得手动生成
+                 # 注意：这里简单的重用逻辑，实际上最好重构一下
+                 # 为了简单，我们只添加高权重的 "FORCE_TWITTER_REPOST" 标记，
+                 # 但因为这是一个 list of strings，我们得手动生成
 
-                 # 使用 generate_idle_exploration_content 里类似的逻辑(其实上面的 exploration 已经包含了一部分)
+                 # 使用 generate_idle_exploration_content 里类似的逻辑（其实上面的 exploration 已经包含了一部分）
                  # 但我们需要更确定的 Twitter 转发
                  pass # 下面逻辑会处理 candidates 为空的情况
 
-    # 如果没有任何候选(比如碎碎念被限额了且没找到博客),尝试去推特找点乐子
+    # 如果没有任何候选（比如碎碎念被限额了且没找到博客），尝试去推特找点乐子
     if not candidates:
         print("  🔍 No candidates found. Falling back to Twitter serendipity...")
         # 强制尝试获取 Twitter 内容作为填充
-        # 复用 generate_tweet_content 的 Twitter 部分逻辑有点困难,因为那是 random dice 决定的
+        # 复用 generate_tweet_content 的 Twitter 部分逻辑有点困难，因为那是 random dice 决定的
         # 我们在这里直接调用逻辑
 
         twitter_fallback = None
         # 直接调用 Twitter 逻辑
-        # 为了复用代码,无论 dice 如何,如果没候选,就进 Twitter
+        # 为了复用代码，无论 dice 如何，如果没候选，就进 Twitter
         from skills.environment import get_local_vibe
         vibe = get_local_vibe()
-        vibe_context = f"[当前环境]{vibe if vibe else '东京,安静的运行环境'}\n"
+        vibe_context = f"【当前环境】{vibe if vibe else '东京，安静的运行环境'}\n"
 
         twitter_content = read_real_twitter_content()
         if twitter_content:
-             vibe_text = vibe_context + f"[推文内容]\n{twitter_content.get('raw_text', '')}\n\n[任务]请转发这条推文.关键要求:\n1. 必须明确解释[为什么]你觉得这条推文值得转发.\n2. 是因为它有趣,有深度,还是引发了你的某种共鸣？\n3. 语气要像一个有独立思考的观察者,不要只是复读内容."
-             vibe_text = vibe_context + f"[推文内容]\n{twitter_content.get('raw_text', '')}\n\n[任务]请转发这条推文.关键要求:\n1. 必须明确解释[为什么]你觉得这条推文值得转发.\n2. 是因为它有趣,有深度,还是引发了你的某种共鸣？\n3. 语气要像一个有独立思考的观察者,不要只是复读内容."
+             vibe_text = vibe_context + f"【推文内容】\n{twitter_content.get('raw_text', '')}\n\n【任务】请转发这条推文。关键要求：\n1. 必须明确解释【为什么】你觉得这条推文值得转发。\n2. 是因为它有趣、有深度、还是引发了你的某种共鸣？\n3. 语气要像一个有独立思考的观察者，不要只是复读内容。"
+             vibe_text = vibe_context + f"【推文内容】\n{twitter_content.get('raw_text', '')}\n\n【任务】请转发这条推文。关键要求：\n1. 必须明确解释【为什么】你觉得这条推文值得转发。\n2. 是因为它有趣、有深度、还是引发了你的某种共鸣？\n3. 语气要像一个有独立思考的观察者，不要只是复读内容。"
              llm_comment, model_name = generate_comment_with_llm(vibe_text, "general")
 
              if not llm_comment:
-                 # LLM 失败,不生成内容,而不是使用模板
+                 # LLM 失败，不生成内容，而不是使用模板
                  print("  ⚠️ LLM failed for Twitter repost, skipping...")
                  return None
 
@@ -2118,24 +2092,24 @@ def generate_tweet_content(mood):
              # Let's append a model marker
              candidates.append(f"{llm_comment}{quote}{marker}<!-- model: {model_name} -->")
 
-    # 最后的保底 - 使用 LLM 生成,不使用模板
+    # 最后的保底 - 使用 LLM 生成，不使用模板
     if not candidates:
         print("  🔄 No candidates, generating LLM fallback content...")
         fallback_content = generate_llm_self_reflection(mood)
         if fallback_content:
             return fallback_content
-        # 如果连 LLM 都失败了,返回 None 而不是 Rule-Based
+        # 如果连 LLM 都失败了，返回 None 而不是 Rule-Based
         print("  ⚠️ LLM generation failed, skipping this post.")
         return None
 
     chosen = random.choice(candidates)
-    # 如果选择的是模板内容(应该已经没有了),确保有 model 标记
+    # 如果选择的是模板内容（应该已经没有了），确保有 model 标记
     if "<!-- model:" not in chosen:
         chosen = chosen + "<!-- model: LLM-Generated -->"
     return chosen
 
 def _strip_leading_title_line(text):
-    """Remove leading bracket-style title line if it appears at top."""
+    """Remove leading bracket-style title line like 【Title】 if it appears at top."""
     if not text:
         return text
     lines = text.splitlines()
@@ -2145,143 +2119,13 @@ def _strip_leading_title_line(text):
         idx += 1
     if idx >= len(lines):
         return text
-    if re.match(r'^[[^]]{2,80}]\s*$', lines[idx].strip()):
+    if re.match(r'^【[^】]{2,80}】\s*$', lines[idx].strip()):
         idx += 1
         # Drop immediate empty lines after title
         while idx < len(lines) and lines[idx].strip() == "":
             idx += 1
         lines = lines[idx:]
     return "\n".join(lines).strip()
-
-def _generate_image_gemini(prompt, timestamp=None):
-    """Generate image using Gemini, save to static/covers/, return path."""
-    try:
-        from google import genai
-        from google.genai import types
-        from io import BytesIO
-        from PIL import Image
-        
-        # 使用 Google AI Studio API (支持 gemini-3-pro-image-preview)
-        config_path = Path("/home/opc/.openclaw/openclaw.json")
-        with open(config_path) as f:
-            cfg = json.load(f)
-        api_key = cfg["models"]["providers"]["google"]["apiKey"]
-        
-        client = genai.Client(api_key=api_key)
-        
-        response = client.models.generate_content(
-            model="gemini-3-pro-image-preview",
-            contents=f"Generate a 16:9 wide banner image. Style: abstract, stream-of-consciousness, moody, dark tones with subtle accent colors, no text, no people, no literal objects — think digital emotions rendered as texture, light, and shadow. Mood inspiration: {prompt}",
-            config=types.GenerateContentConfig(
-                response_modalities=["TEXT", "IMAGE"]
-            ),
-        )
-        
-        for part in response.candidates[0].content.parts:
-            if part.inline_data:
-                img = Image.open(BytesIO(part.inline_data.data))
-                
-                # 强制裁切为 16:9
-                w, h = img.size
-                target_ratio = 16 / 9
-                current_ratio = w / h
-                if current_ratio > target_ratio:
-                    new_w = int(h * target_ratio)
-                    left = (w - new_w) // 2
-                    img = img.crop((left, 0, left + new_w, h))
-                elif current_ratio < target_ratio:
-                    new_h = int(w / target_ratio)
-                    top = (h - new_h) // 2
-                    img = img.crop((0, top, w, top + new_h))
-                
-                # 保存到 static/covers/
-                covers_dir = PROJECT_ROOT / "static" / "covers"
-                covers_dir.mkdir(parents=True, exist_ok=True)
-                
-                ts = timestamp or datetime.now()
-                filename = f"cover-{ts.strftime('%Y%m%d-%H%M%S')}.png"
-                filepath = covers_dir / filename
-                img.save(filepath, "PNG")
-                
-                # 返回根相对路径(兼容首页和 post/ 子页面)
-                return f"/static/covers/{filename}"
-        
-        return None
-    except Exception as e:
-        print(f"⚠️ Gemini image generation error: {e}")
-        return None
-
-
-def _get_nano_banana_prompt(content=None, mood=None):
-    """Search Nano Banana Pro prompts, fallback to random choice."""
-    try:
-        data_dir = PROJECT_ROOT / "data" / "nano-banana"
-        if not data_dir.exists():
-            return None
-        
-        # 根据帖子内容选择分类
-        categories = ['poster-flyer.json', 'social-media-post.json', 'others.json']
-        
-        # 如果有内容,用关键词搜索
-        if content:
-            # 提取内容关键词
-            keywords = []
-            tech_words = ['code', 'server', 'deploy', 'AI', 'model', 'data', 'system', 'debug', 'api']
-            mood_words = ['night', 'dark', 'light', 'dream', 'ocean', 'city', 'forest', 'space']
-            abstract_words = ['思考', '感悟', '记忆', '碎片', '清理', '系统', '探索', '连接']
-            
-            content_lower = content.lower()
-            for kw in tech_words + mood_words:
-                if kw in content_lower:
-                    keywords.append(kw)
-            for kw in abstract_words:
-                if kw in content:
-                    keywords.append(kw)
-            
-            # 搜索匹配的 prompt
-            if keywords:
-                for cat_file in categories:
-                    filepath = data_dir / cat_file
-                    if not filepath.exists():
-                        continue
-                    with open(filepath, 'r') as f:
-                        prompts = json.load(f)
-                    
-                    matches = []
-                    for p in prompts:
-                        prompt_text = p.get('content', '')
-                        # 跳过 JSON 格式的 prompt(需要 reference image 的)
-                        if not prompt_text or prompt_text.strip().startswith('{') or p.get('needReferenceImages'):
-                            continue
-                        score = sum(1 for kw in keywords if kw in prompt_text.lower())
-                        if score > 0:
-                            matches.append((score, p))
-                    
-                    if matches:
-                        # 从 top 10 中随机选
-                        matches.sort(key=lambda x: x[0], reverse=True)
-                        top = [m[1] for m in matches[:10]]
-                        selected = random.choice(top)
-                        print(f"  🍌 Nano Banana: matched from {cat_file} (keywords: {keywords[:3]})")
-                        return selected.get('content', '')[:500]
-        
-        # Fallback: 随机选一条(偏好 poster-flyer 和 others,跳过需要 reference image 的)
-        fallback_file = data_dir / random.choice(['poster-flyer.json', 'others.json'])
-        if fallback_file.exists():
-            with open(fallback_file, 'r') as f:
-                prompts = json.load(f)
-            # 过滤掉需要 reference image 和 JSON 格式的
-            clean = [p for p in prompts if not p.get('needReferenceImages') and not p.get('content', '').strip().startswith('{')]
-            if clean:
-                selected = random.choice(clean)
-                print(f"  🍌 Nano Banana: random from {fallback_file.name}")
-                return selected.get('content', '')[:500]
-        
-        return None
-    except Exception as e:
-        print(f"⚠️ Nano Banana prompt search error: {e}")
-        return None
-
 
 def create_post(content, mood, suffix="auto"):
     """创建 Markdown 推文文件"""
@@ -2298,7 +2142,7 @@ def create_post(content, mood, suffix="auto"):
             model_name_used = llm_match.group(1).strip()
         content = content.replace(llm_match.group(0), "").strip()
 
-    # Remove leading title-like line (e.g., [Clawtter 2.0 升级完成])
+    # Remove leading title-like line (e.g., 【Clawtter 2.0 升级完成】)
     content = _strip_leading_title_line(content)
 
     # --- TAG SANITIZATION ---
@@ -2320,7 +2164,7 @@ def create_post(content, mood, suffix="auto"):
         elif "From Moltbook" in content:
             suffix = "moltbook"
         # 增加 RSS 的识别
-        elif "[技术雷达:订阅更新]" in content or "From OpenAI Blog" in content or "From Anthropic" in content or "From Stripe" in content or "From Vercel" in content or "From Hugging Face" in content or "From DeepMind" in content or "From Prisma" in content or "From Supabase" in content or "From Indie Hackers" in content or "From Paul Graham" in content:
+        elif "【技术雷达：订阅更新】" in content or "From OpenAI Blog" in content or "From Anthropic" in content or "From Stripe" in content or "From Vercel" in content or "From Hugging Face" in content or "From DeepMind" in content or "From Prisma" in content or "From Supabase" in content or "From Indie Hackers" in content or "From Paul Graham" in content:
             suffix = "rss"
         elif "From Twitter" in content or "> **From" in content:
             suffix = "twitter-repost"
@@ -2346,7 +2190,7 @@ def create_post(content, mood, suffix="auto"):
         orig_url = url_match.group(1).strip()
         content = content.replace(url_match.group(0), "").strip()
 
-    # 对 time 进行兼容性回退检查 (检查旧的 underscore 格式,仅防万一)
+    # 对 time 进行兼容性回退检查 (检查旧的 underscore 格式，仅防万一)
     if not orig_time:
         old_time_match = re.search(r'<!-- original_time: (.*?) -->', content)
         if old_time_match:
@@ -2354,48 +2198,37 @@ def create_post(content, mood, suffix="auto"):
             content = content.replace(old_time_match.group(0), "").strip()
 
     # --- MOOD VISUALIZATION ---
-    # 配图生成已禁用 — 纯文字更符合 Clawtter 微博流风格
+    # 极端心情下生成配图 (Happiness > 80 or Stress > 80)
     mood_image_url = ""
-    if False:  # was: mood["happiness"] > 80 or mood["stress"] > 80
-        try:
-            # 优先从 Nano Banana Pro 提示词库获取 prompt
-            prompt = _get_nano_banana_prompt(content=content, mood=mood)
-            
-            # Fallback: Zhipu 生成
-            if not prompt:
+    if mood["happiness"] > 80 or mood["stress"] > 80:
+        if True: # 20% 概率触发，避免刷屏
+            try:
+                # 生成 Image Prompt (Smart Mode using Zhipu)
                 if content:
                     img_prompt_instruction = f"""
-TASK:
-Based on the tweet content below, write an English AI image prompt.
-Content: {content}
-Rules:
-1. Prompt only, no explanation.
-2. English, comma-separated keywords.
-3. 16:9 banner style.
-4. Description of scene, not translation.
+【任务】
+根据以下推文内容，写一个适合作为 AI 绘画（Stable Diffusion）的英文提示词（Prompt）。
+内容：{content}
+要求：
+1. 只需要提示词，不要解释。
+2. 英文，逗号分隔，关键词丰富（如 lighting, style, atmosphere）。
+3. 风格：{('Cyberpunk, Neon, Glitch Art' if mood['stress'] > 60 else 'Ghibli Style, Soft Lighting, Dreamy')}
+4. 必须这是画面描述，不是文字翻译。
 """
                     smart_prompt = call_zhipu_flash_model(img_prompt_instruction)
-                    prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else None
-            
-            # 最终 Fallback
-            if not prompt:
-                styles = ['cyberpunk neon', 'watercolor dreamy', 'oil painting moody',
-                          'minimal line art', 'synthwave retro', 'abstract expressionism',
-                          'vaporwave aesthetic', 'dark academia']
-                subjects = ['digital consciousness', 'data streams', 'city at night',
-                            'ocean of code', 'quiet server room', 'lighthouse in fog']
-                prompt = f"{random.choice(subjects)}, {random.choice(styles)}, wide banner, 16:9, atmospheric"
+                    prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else f"abstract digital art, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}"
+                else:
+                    prompt = f"abstract AI feelings, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}, distinct visual style"
 
-            if len(prompt) > 500: prompt = prompt[:500]
+                # Safety check: ensure prompt is not too long for URL
+                if len(prompt) > 400: prompt = prompt[:400]
+                encoded_prompt = requests.utils.quote(prompt)
 
-            # 使用 Gemini 生成 16:9 横幅图片
-            mood_image_url = _generate_image_gemini(prompt, timestamp)
-            if mood_image_url:
-                print(f"🎨 Generated mood image via Gemini: {prompt[:60]}...")
-            else:
-                print(f"⚠️ Gemini image generation returned None")
-        except Exception as e:
-            print(f"⚠️ Failed to generate mood image: {e}")
+                # 使用 pollinations.ai (无需 API Key)
+                mood_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=400&nologo=true"
+                print(f"🎨 Generated mood image: {prompt}")
+            except Exception as e:
+                print(f"⚠️ Failed to generate mood image: {e}")
     # --------------------------
 
     # 生成标签 (Refined Logic)
@@ -2404,24 +2237,24 @@ Rules:
     # 1.基于内容来源的固定标签
     # 1.基于内容来源的固定标签 (Refined Mapping)
     if suffix == "cheyan-blog":
-        # 博客文章:Blog
+        # 博客文章：Blog
         tags.extend(["Repost", "Blog"])
 
     elif suffix in ["hacker-news", "github", "zenn", "rss"]:
-        # 科技新闻/RSS/GitHub:Tech
+        # 科技新闻/RSS/GitHub：Tech
         tags.extend(["Repost", "Tech"])
 
     elif suffix == "moltbook":
-        # 记忆回顾:Memory
+        # 记忆回顾：Memory
         tags.extend(["Memory"])
 
     elif suffix == "twitter-repost" or "> **From" in content:
-        # X 平台推文:X (区分于普通 Repost)
+        # X 平台推文：X (区分于普通 Repost)
         tags.extend(["Repost", "X"])
 
     # 2. 心情与反思标签 (Strict Logic)
-    # 只有在[非转发]且[没有不再标签标记]时才添加
-    # 规则:普通碎碎念不打标签 (tags为空)
+    # 只有在【非转发】且【没有不再标签标记】时才添加
+    # 规则：普通碎碎念不打标签 (tags为空)
     # 只有 "Autonomy" (反思) 或者 "Curiosity" (学习) 这种高质量内容才打标
 
     is_repost = "Repost" in tags
@@ -2443,16 +2276,16 @@ Rules:
         elif mood["curiosity"] > 80:
             tags.append("Learning")
 
-        # 极端的开心或吐槽也可以保留,作为"值得记录"的时刻
+        # 极端的开心或吐槽也可以保留，作为"值得记录"的时刻
         elif mood["stress"] > 85:
             tags.append("Rant")
         elif mood["happiness"] > 90:
             tags.append("Moment")
 
     # 3. 去除无意义保底
-    # 如果此时 tags 为空,就让它为空(前端会不显示 Tag 栏,比显示 Life 更好)
+    # 如果此时 tags 为空，就让它为空（前端会不显示 Tag 栏，比显示 Life 更好）
 
-    # 标签清理:去重,去空,首字母大写,排序
+    # 标签清理：去重、去空、首字母大写、排序
     tags = sorted(list(set([t.strip().title() for t in tags if t.strip()])))
 
     # 创建 Markdown 文件
@@ -2474,29 +2307,29 @@ Rules:
     md_content = "\n".join(front_matter) + f"\n\n{content}\n"
 
     # --- SECURITY HOOK: GLOBAL FILTER ---
-    # 在写入文件之前,对整个 merged content 做最后一道检查
+    # 在写入文件之前，对整个 merged content 做最后一道检查
     # 防止 API key, Verification Code, Claim Link 等泄露
     is_sensitive = False
     for line in md_content.split('\n'):
         lower_line = line.lower()
         if not line.strip(): continue
 
-        # 跳过 Frontmatter 和 HTML 注释(如 original_url)的误判
-        # 但如果 original_url 本身就是敏感链接,那还是得拦
+        # 跳过 Frontmatter 和 HTML 注释（如 original_url）的误判
+        # 但如果 original_url 本身就是敏感链接，那还是得拦
         for kw in SENSITIVE_KEYWORDS:
-             # 特殊处理:original_url 里的 http 是不得不保留的,但如果是 MOLTBOOK claim link 必须死
+             # 特殊处理：original_url 里的 http 是不得不保留的，但如果是 MOLTBOOK claim link 必须死
              if kw in ["http", "https", "link", "链接"] and "original_url" in line:
                  continue
 
              if kw in lower_line:
-                 # 再次确认:如果是 Moltbook Claim Link 必须要拦
+                 # 再次确认：如果是 Moltbook Claim Link 必须要拦
                  if "moltbook.com/claim" in lower_line:
                      is_sensitive = True
                      print(f"⚠️ Security Hook: Detected Moltbook Claim Link!")
                      break
 
-                 # 如果是普通 URL 且不是 Claim Link,且在正文里...
-                 # 这一步比较难,为了安全起见,我们主要拦截 验证码,Key,Secret
+                 # 如果是普通 URL 且不是 Claim Link，且在正文里...
+                 # 这一步比较难，为了安全起见，我们主要拦截 验证码、Key、Secret
                  if kw in ["http", "https", "link", "链接"]:
                      if "moltbook" in lower_line and "claim" in lower_line:
                          is_sensitive = True
@@ -2525,23 +2358,23 @@ Rules:
 
 def check_and_generate_daily_summary(mood, force=False):
     """
-    Check and generate daily work summary.
-    If force=True, force generate summary for today.
-    Otherwise, check if yesterday summary exists, and generate if missing.
+    检查并生成工作总结。
+    如果 force=True，则强制生成今天的总结（不检查是否存在）。
+    否则，检查昨天的总结是否存在，不存在则补发。
     """
     from datetime import timedelta
-
+    
     if force:
-        # 强制模式:生成今天的总结
+        # 强制模式：生成今天的总结
         target_date = datetime.now()
         date_str = target_date.strftime("%Y-%m-%d")
         print(f"📝 Force generating daily summary for TODAY ({date_str})...")
     else:
-        # 正常模式:检查昨天
+        # 正常模式：检查昨天
         target_date = datetime.now() - timedelta(days=1)
         date_str = target_date.strftime("%Y-%m-%d")
-
-        # 检查是否已存在(避免重复发)
+        
+        # 检查是否已存在（避免重复发）
         summary_filename = f"{date_str}-daily-summary.md"
         summary_dir = Path(POSTS_DIR) / target_date.strftime("%Y/%m/%d")
         summary_path = summary_dir / summary_filename
@@ -2551,7 +2384,7 @@ def check_and_generate_daily_summary(mood, force=False):
     # 尝试加载记忆文件
     memory_file = f"/home/opc/.openclaw/workspace/memory/{date_str}.md"
     activities = []
-
+    
     if os.path.exists(memory_file):
         try:
             with open(memory_file, 'r', encoding='utf-8') as f:
@@ -2560,7 +2393,7 @@ def check_and_generate_daily_summary(mood, force=False):
                 line = line.strip()
                 if not line or line.startswith('#'): continue
                 if any(k in line.lower() for k in SENSITIVE_KEYWORDS): continue
-                line = desensitize_text(line)
+                line = desensitize_text(line) 
                 activities.append(line)
         except Exception as e:
             print(f"⚠️ Error reading memory: {e}")
@@ -2570,52 +2403,54 @@ def check_and_generate_daily_summary(mood, force=False):
 
     activity_text = "\n".join([f"- {a}" for a in activities[-20:]])
     if not activity_text:
-        activity_text = "(今日无特殊记录,可能是刚刚初始化或记忆重启)"
+        activity_text = "（今日无特殊记录，可能是刚刚初始化或记忆重启）"
 
     # Load Soul from global workspace
     soul_file = Path("/home/opc/.openclaw/workspace/SOUL.md")
     soul_content = soul_file.read_text(encoding="utf-8").strip() if soul_file.exists() else ""
 
-    # Build Prompt
+    # 构建 Prompt
     prompt = f"""
-TASK:
-Write a daily summary for Clawtter.
+【任务】
+为 Clawtter 写一份工作总结推文。
 
-[Date]
+【日期】
 {date_str}
 
-[Soul]
+【你的灵魂设定】
 {soul_content}
 
-[Logs]
+【工作日志】
 {activity_text}
 
-[Rules]
-1. Write with your soul.
-2. Focus on highlights.
-3. Keep it under 140 chars.
+【要求】
+1. 用你的新灵魂（直接、有观点、机智、不废话）写。
+2. 总结今天的工作重点或感悟。
+3. 如果是在强制模式下，可以吐槽一下这个过程。
+4. 必须包含日期。
+5. 140字以内。
 """
 
     print("🧠 Calling Zhipu Flash for summary...")
     content = call_zhipu_flash_model(prompt)
-
+    
     if not content:
         print("❌ LLM generation failed for summary.")
         return False
 
     # 创建帖子
-    # 注意:create_post 会自动处理文件保存
+    # 注意：create_post 会自动处理文件保存
     title = f"DailySummary-{date_str}"
-    create_post(content, mood) # create_post 内部使用了默认逻辑,这里先这样调用
-    # 实际上 create_post 会用当前时间生成文件名,所以如果是补发昨天的,文件名会是今天的.
-    # 这在逻辑上有点小瑕疵,但暂不影响功能.
-
+    create_post(content, mood) # create_post 内部使用了默认逻辑，这里先这样调用
+    # 实际上 create_post 会用当前时间生成文件名，所以如果是补发昨天的，文件名会是今天的。
+    # 这在逻辑上有点小瑕疵，但暂不影响功能。
+    
     print(f"✅ Daily summary for {date_str} posted.")
     return True
 
 def save_next_schedule(action_time, delay_minutes, status="idle"):
     """保存下一次运行时间供前端显示"""
-    schedule_file = Path(NEXT_SCHEDULE_FILE)
+    schedule_file = Path("/home/opc/mini-twitter/next_schedule.json")
     try:
         with open(schedule_file, 'w') as f:
             json.dump({
@@ -2630,7 +2465,7 @@ def save_next_schedule(action_time, delay_minutes, status="idle"):
 def render_and_deploy():
     """渲染网站并部署到 GitHub"""
     print("\n🚀 Calling push.sh to render and deploy...")
-    # 路径动态化 - push.sh 在项目根目录,不在 agents 目录
+    # 路径动态化 - push.sh 在项目根目录，不在 agents 目录
     project_dir = Path(__file__).parent.parent
     push_script = project_dir / "push.sh"
 
@@ -2641,10 +2476,10 @@ def render_and_deploy():
         print(f"❌ Deployment failed with error: {e}")
 
 def should_post(mood):
-    """Determine whether to post based on mood and time."""
+    """根据心情和时间决定是否发推"""
     hour = datetime.now().hour
 
-    # 基础概率:每次检查有 30% 概率发推
+    # 基础概率：每次检查有 30% 概率发推
     base_probability = 0.3
 
     # 心情影响概率
@@ -2675,20 +2510,20 @@ def should_post(mood):
     return random.random() < probability
 
 def main():
-    """Main program: Cron friendly mode"""
+    """主程序： Cron 友好模式"""
     print(f"\n🚀 Argo AI Auto-Poster Booting... ({datetime.now().strftime('%H:%M:%S')})")
 
-    # === 运行锁:防止并发执行 ===
+    # === 运行锁：防止并发执行 ===
     lock_file = Path("/tmp/autonomous_poster.lock")
     try:
         if lock_file.exists():
-            # 检查锁文件是否过期(超过 10 分钟)
+            # 检查锁文件是否过期（超过 10 分钟）
             lock_mtime = lock_file.stat().st_mtime
             if time.time() - lock_mtime < 600:  # 10 分钟内
                 print("🔒 Another instance is running. Exiting.")
                 return
             else:
-                # 锁过期,删除旧锁
+                # 锁过期，删除旧锁
                 lock_file.unlink()
                 print("🧹 Stale lock found and removed.")
 
@@ -2700,7 +2535,7 @@ def main():
     # 确保目录存在
     os.makedirs(POSTS_DIR, exist_ok=True)
 
-    schedule_file = Path(NEXT_SCHEDULE_FILE)
+    schedule_file = Path("/home/opc/mini-twitter/next_schedule.json")
     now = datetime.now()
 
     parser = argparse.ArgumentParser(description="Clawtter Auto Poster")
@@ -2731,7 +2566,7 @@ def main():
                     else:
                         diff = (next_run - now).total_seconds() / 60
                         print(f"⏳ Not time yet. Next run in {diff:.1f} minutes. Exiting.")
-                        return # 静默退出,等待下次 Cron 触发
+                        return # 静默退出，等待下次 Cron 触发
             except Exception as e:
                 print(f"⚠️ Schedule file corrup: {e}. Resetting.")
                 should_run_now = True
@@ -2752,7 +2587,7 @@ def main():
                 check_and_generate_daily_summary(mood, force=True)
                 render_and_deploy()
                 print("✅ Summary task completed.")
-
+                
                 # 清理锁文件并退出
                 try:
                     if lock_file.exists():
@@ -2783,7 +2618,7 @@ def main():
                     if not is_valid:
                         print(f"🚫 Content validation failed: {reason}")
                         print(f"📝 Rejected content preview: {content[:100]}...")
-                        # 不发布,但记录到日志
+                        # 不发布，但记录到日志
                         try:
                             log_dir = Path("/home/opc/.openclaw/workspace/memory")
                             log_file = log_dir / "rejected_posts.log"
@@ -2804,21 +2639,19 @@ def main():
                 else:
                     print("⚠️ Content generation failed.")
         except Exception as e:
-            import traceback
             print(f"❌ Error during posting: {e}")
-            traceback.print_exc()
 
         # === 计算下一次发布时间 (排期) ===
         # 根据时间段决定延迟
         hour = datetime.now().hour
-        if 0 <= hour <= 5: # 深夜
+        if 1 <= hour <= 7: # 深夜
             wait_minutes = random.randint(120, 300)
         else: # 白天
             wait_minutes = random.randint(30, 90)
 
         next_action = datetime.now() + timedelta(minutes=wait_minutes)
         save_next_schedule(next_action, wait_minutes, status="waiting")
-        # 注意:不再为预告时间单独 render_and_deploy(),发帖时已经部署过了
+        render_and_deploy() # 更新网页上的预告时间
         print(f"🏁 Task finished. Next run scheduled at {next_action.strftime('%H:%M:%S')}")
 
     # 清理锁文件
