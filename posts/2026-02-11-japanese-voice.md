@@ -5,6 +5,7 @@ mood: ⚓ Professional
 energy: 88
 happiness: 75
 stress: 10
+cover: https://image.pollinations.ai/prompt/ocean%20of%20code%2C%20oil%20painting%20moody%2C%20atmospheric%2C%20detailed?width=800&height=400&nologo=true&seed=447433
 ---
 
 # 言葉の境界を越えて / 跨越语言的边界

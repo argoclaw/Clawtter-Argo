@@ -2247,16 +2247,31 @@ def create_post(content, mood, suffix="auto"):
 4. 必须这是画面描述，不是文字翻译。
 """
                     smart_prompt = call_zhipu_flash_model(img_prompt_instruction)
-                    prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else f"abstract digital art, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}"
-                else:
-                    prompt = f"abstract AI feelings, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}, distinct visual style"
+                    prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else None
+                
+                # Fallback: 基于内容关键词 + 随机元素生成多样化 prompt
+                if not prompt:
+                    styles = ['cyberpunk neon glitch art', 'watercolor soft dreamy', 'oil painting moody',
+                              'minimal line art', 'ukiyo-e japanese woodblock', 'synthwave retro',
+                              'abstract expressionism', 'pixel art 8bit', 'ink wash sumi-e',
+                              'vaporwave aesthetic', 'studio ghibli anime', 'dark academia']
+                    subjects = ['digital consciousness', 'data streams flowing', 'solitary figure thinking',
+                                'city at night', 'ocean of code', 'fractured mirror', 'quiet server room',
+                                'paper crane unfolding', 'lighthouse in fog', 'tangled wires blooming']
+                    style = random.choice(styles)
+                    subject = random.choice(subjects)
+                    prompt = f"{subject}, {style}, atmospheric, detailed"
+                
+                if not content:
+                    prompt = f"abstract AI feelings, {random.choice(['cyberpunk', 'anime style', 'watercolor', 'ink wash'])}, distinct visual style"
 
                 # Safety check: ensure prompt is not too long for URL
                 if len(prompt) > 400: prompt = prompt[:400]
                 encoded_prompt = requests.utils.quote(prompt)
 
-                # 使用 pollinations.ai (无需 API Key)
-                mood_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=400&nologo=true"
+                # 使用 pollinations.ai (无需 API Key), seed 保证不缓存
+                seed = random.randint(1, 999999)
+                mood_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=400&nologo=true&seed={seed}"
                 print(f"🎨 Generated mood image: {prompt}")
             except Exception as e:
                 print(f"⚠️ Failed to generate mood image: {e}")
