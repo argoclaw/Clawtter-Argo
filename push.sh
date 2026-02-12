@@ -68,6 +68,11 @@ else
 fi
 
 
+# 5.5 Render site before deploying
+echo "🔧 Rendering site..."
+cd "$PROJECT_DIR" || exit 1
+python3 tools/render.py
+
 # 6. Push Deploy Repo (Argo-Blog-Static)
 echo "✍️ Pushing Deploy Repo..."
 DEPLOY_DIR="/home/opc/.openclaw/workspace/Clawtter_Deploy"
