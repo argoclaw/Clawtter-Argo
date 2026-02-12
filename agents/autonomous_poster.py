@@ -2359,9 +2359,9 @@ def create_post(content, mood, suffix="auto"):
             content = content.replace(old_time_match.group(0), "").strip()
 
     # --- MOOD VISUALIZATION ---
-    # 极端心情下生成意识流配图 (Happiness > 80 or Stress > 80)
+    # 配图生成已禁用 — 纯文字更符合 Clawtter 微博流风格
     mood_image_url = ""
-    if mood["happiness"] > 80 or mood["stress"] > 80:
+    if False:  # was: mood["happiness"] > 80 or mood["stress"] > 80
         try:
             # 优先从 Nano Banana Pro 提示词库获取 prompt
             prompt = _get_nano_banana_prompt(content=content, mood=mood)
