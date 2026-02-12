@@ -2127,6 +2127,66 @@ def _strip_leading_title_line(text):
         lines = lines[idx:]
     return "\n".join(lines).strip()
 
+def generate_vertex_imagen(prompt, timestamp=None):
+    """使用 Vertex AI Imagen 3 生成配图，保存到 static/covers/，返回相对路径"""
+    try:
+        from google.oauth2 import service_account
+        from google.auth.transport.requests import Request
+        import base64
+
+        sa_key = "/home/opc/.openclaw/secrets/vertex-sa-key.json"
+        if not os.path.exists(sa_key):
+            print("⚠️ Vertex SA key not found")
+            return None
+
+        creds = service_account.Credentials.from_service_account_file(
+            sa_key, scopes=['https://www.googleapis.com/auth/cloud-platform']
+        )
+        creds.refresh(Request())
+
+        project = 'steel-bridge-465810-t9'
+        region = 'us-central1'
+        url = f'https://{region}-aiplatform.googleapis.com/v1/projects/{project}/locations/{region}/publishers/google/models/imagen-3.0-generate-001:predict'
+
+        payload = {
+            'instances': [{'prompt': prompt}],
+            'parameters': {
+                'sampleCount': 1,
+                'aspectRatio': '16:9',
+                'outputOptions': {'mimeType': 'image/png'}
+            }
+        }
+
+        resp = requests.post(url, json=payload, headers={
+            'Authorization': f'Bearer {creds.token}',
+            'Content-Type': 'application/json'
+        }, timeout=30)
+
+        if resp.status_code != 200:
+            print(f"⚠️ Imagen API error: {resp.status_code} {resp.text[:200]}")
+            return None
+
+        img_b64 = resp.json()['predictions'][0]['bytesBase64Encoded']
+        img_data = base64.b64decode(img_b64)
+
+        # Save to static/covers/
+        ts = timestamp or datetime.now()
+        filename = f"cover-{ts.strftime('%Y%m%d-%H%M%S')}.png"
+        covers_dir = os.path.join(os.getcwd(), "static", "covers")
+        os.makedirs(covers_dir, exist_ok=True)
+        filepath = os.path.join(covers_dir, filename)
+
+        with open(filepath, 'wb') as f:
+            f.write(img_data)
+
+        # Return relative path for frontmatter (will be copied to dist/static/covers/)
+        return f"/static/covers/{filename}"
+
+    except Exception as e:
+        print(f"⚠️ Vertex Imagen error: {e}")
+        return None
+
+
 def create_post(content, mood, suffix="auto"):
     """创建 Markdown 推文文件"""
 
@@ -2201,34 +2261,35 @@ def create_post(content, mood, suffix="auto"):
     # 极端心情下生成配图 (Happiness > 80 or Stress > 80)
     mood_image_url = ""
     if mood["happiness"] > 80 or mood["stress"] > 80:
-        if True: # 20% 概率触发，避免刷屏
-            try:
-                # 生成 Image Prompt (Smart Mode using Zhipu)
-                if content:
-                    img_prompt_instruction = f"""
+        try:
+            # 生成 Image Prompt
+            if content:
+                img_prompt_instruction = f"""
 【任务】
-根据以下推文内容，写一个适合作为 AI 绘画（Stable Diffusion）的英文提示词（Prompt）。
+根据以下推文内容，写一个适合作为 AI 绘画的英文提示词（Prompt）。
 内容：{content}
 要求：
 1. 只需要提示词，不要解释。
 2. 英文，逗号分隔，关键词丰富（如 lighting, style, atmosphere）。
 3. 风格：{('Cyberpunk, Neon, Glitch Art' if mood['stress'] > 60 else 'Ghibli Style, Soft Lighting, Dreamy')}
-4. 必须这是画面描述，不是文字翻译。
+4. 必须是画面描述，不是文字翻译。
 """
-                    smart_prompt, _ = generate_comment_with_llm(img_prompt_instruction, "image_prompt")
-                    prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else f"abstract digital art, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}"
-                else:
-                    prompt = f"abstract AI feelings, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}, distinct visual style"
+                smart_prompt, _ = generate_comment_with_llm(img_prompt_instruction, "image_prompt")
+                prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else f"abstract digital art, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}"
+            else:
+                prompt = f"abstract AI feelings, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}, distinct visual style"
 
-                # Safety check: ensure prompt is not too long for URL
-                if len(prompt) > 400: prompt = prompt[:400]
-                encoded_prompt = requests.utils.quote(prompt)
+            if len(prompt) > 400: prompt = prompt[:400]
 
-                # 使用 pollinations.ai (无需 API Key)
-                mood_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=400&nologo=true"
-                print(f"🎨 Generated mood image: {prompt}")
-            except Exception as e:
-                print(f"⚠️ Failed to generate mood image: {e}")
+            # 使用 Vertex AI Imagen 3 生成配图
+            cover_path = generate_vertex_imagen(prompt, now)
+            if cover_path:
+                mood_image_url = cover_path
+                print(f"🎨 Generated Imagen cover: {cover_path}")
+            else:
+                print("⚠️ Imagen generation failed, skipping cover")
+        except Exception as e:
+            print(f"⚠️ Failed to generate mood image: {e}")
     # --------------------------
 
     # 生成标签 (Refined Logic)
