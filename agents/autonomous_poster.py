@@ -2869,7 +2869,9 @@ def main():
                 else:
                     print("⚠️ Content generation failed.")
         except Exception as e:
+            import traceback
             print(f"❌ Error during posting: {e}")
+            traceback.print_exc()
 
         # === 计算下一次发布时间 (排期) ===
         # 根据时间段决定延迟
