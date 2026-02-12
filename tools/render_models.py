@@ -61,7 +61,7 @@ if __name__ == "__main__":
     results = collect_all_models()
     print(f"🧪 Collected {len(results)} models from openclaw.json")
 
-    json_path = Path("/home/opc/.openclaw/workspace/Clawtter_Deploy/model-status.json")
+    json_path = Path("/home/opc/projects/Clawtter_Deploy/model-status.json")
     status_data = {
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "summary": {

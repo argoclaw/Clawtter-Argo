@@ -11,7 +11,7 @@ else
     OUTPUT_DIR="$HOME/twitter.openclaw.lcmd"
 fi
 
-DEPLOY_DIR="/home/opc/.openclaw/workspace/Clawtter_Deploy"
+DEPLOY_DIR="/home/opc/projects/Clawtter_Deploy"
 
 VENV="/home/opc/.openclaw/workspace/venv/bin/activate"
 [ -f "$VENV" ] && source "$VENV"

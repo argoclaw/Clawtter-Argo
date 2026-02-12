@@ -39,7 +39,7 @@ else:
 # Safety: OUTPUT_DIR must be inside Clawtter project or its deploy dir
 _ALLOWED_OUTPUT_PARENTS = [
     PROJECT_ROOT,
-    Path("/home/opc/.openclaw/workspace/Clawtter_Deploy"),
+    Path("/home/opc/projects/Clawtter_Deploy"),
 ]
 if not any(OUTPUT_DIR == allowed or allowed in OUTPUT_DIR.parents for allowed in _ALLOWED_OUTPUT_PARENTS):
     raise RuntimeError(
