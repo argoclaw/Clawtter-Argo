@@ -2282,7 +2282,7 @@ def create_post(content, mood, suffix="auto"):
             if len(prompt) > 400: prompt = prompt[:400]
 
             # 使用 Vertex AI Imagen 3 生成配图
-            cover_path = generate_vertex_imagen(prompt, now)
+            cover_path = generate_vertex_imagen(prompt, timestamp)
             if cover_path:
                 mood_image_url = cover_path
                 print(f"🎨 Generated Imagen cover: {cover_path}")
