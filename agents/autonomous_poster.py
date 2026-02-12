@@ -752,21 +752,52 @@ def generate_idle_exploration_content():
                         return _with_model_marker(llm_comment + quote, model_name)
             except: pass
 
-    # --- D. 时空对话与观点演化 (15% 几率) ---
-    if dice < 0.85:
+    # --- D. 时空对话与观点演化 (动态概率) ---
+    all_posts_list = sorted(resolve_path(SEC_CONFIG["paths"].get("posts_dir", "./posts")).rglob('*.md'))
+    valid_historical_count = len([p for p in all_posts_list if "summary" not in p.name])
+    
+    # 动态概率：池子越浅概率越低，最小 2%，最大 15%
+    base_reflection_prob = 0.15
+    if valid_historical_count < 30:
+        reflection_prob = max(0.02, (valid_historical_count / 30) * base_reflection_prob)
+    else:
+        reflection_prob = base_reflection_prob
+
+    if dice < (0.70 + reflection_prob):
         hist_post = get_historical_memory() # 默认选一个历史记忆
         if hist_post:
             try:
-                with open(hist_post, 'r', encoding='utf-8') as f:
-                    old_content = f.read()
-                    old_body = old_content.split('---')[-1].strip()
-                    old_date = hist_post.stem[:10]
+                # 检查最近是否回忆过 (简单去重逻辑，记录在 memory/reflected-recent.json)
+                reflected_log_path = Path(SEC_CONFIG["paths"].get("memory_dir", "~/.openclaw/workspace/memory")) / "reflected-recent.json"
+                recent_ids = []
+                if reflected_log_path.exists():
+                    try:
+                        with open(reflected_log_path, 'r') as f:
+                            recent_ids = json.load(f)
+                    except: pass
                 
-                raw_text = vibe_context + f"\n【时空对话：你在 {old_date} 的观点】\n{old_body}\n\n【任务】这是你过去的思考。请根据现在的环境感知（负载、主人活动、当前心态），重新审视这个观点。你现在的态度有变化吗？是更加坚信了，还是觉得当时的自己太幼稚？请写出这种演化感。"
-                llm_comment, model_name = generate_comment_with_llm(raw_text, "reflection")
-                if llm_comment:
-                    quote = f"\n\n> **Perspective Evolution (Reflecting on {old_date})**:\n> {old_body[:200]}..."
-                    return _with_model_marker(llm_comment + quote, model_name)
+                if str(hist_post) in recent_ids and valid_historical_count > 5:
+                    # 如果已经回忆过且还有其他可选，则跳过本次或重新抽（这里简单处理为跳过）
+                    pass
+                else:
+                    with open(hist_post, 'r', encoding='utf-8') as f:
+                        old_content = f.read()
+                        old_body = old_content.split('---')[-1].strip()
+                        old_date = hist_post.stem[:10]
+                    
+                    raw_text = vibe_context + f"\n【时空对话：你在 {old_date} 的观点】\n{old_body}\n\n【任务】这是你过去的思考。请根据现在的环境感知（负载、主人活动、当前心态），重新审视这个观点。你现在的态度有变化吗？是更加坚信了，还是觉得当时的自己太幼稚？请写出这种演化感。"
+                    llm_comment, model_name = generate_comment_with_llm(raw_text, "reflection")
+                    if llm_comment:
+                        # 更新去重 log
+                        recent_ids.append(str(hist_post))
+                        if len(recent_ids) > 15: recent_ids.pop(0)
+                        try:
+                            with open(reflected_log_path, 'w') as f:
+                                json.dump(recent_ids, f)
+                        except: pass
+
+                        quote = f"\n\n> **Perspective Evolution (Reflecting on {old_date})**:\n> {old_body[:200]}..."
+                        return _with_model_marker(llm_comment + quote, model_name)
             except: pass
 
     # --- E. Twitter 社交观察 (Fallback) ---
@@ -1049,7 +1080,7 @@ def generate_comment_with_llm(context, style="general", mood=None):
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}
                     ],
-                    "max_tokens": 500
+                    "max_tokens": 2000
                 }
                 resp = requests.post(f"{p['base_url'].rstrip('/')}/chat/completions",
                                    json=payload, headers=headers, timeout=15)

@@ -166,10 +166,10 @@ def render_content_with_repost(post, truncate=False, detail_url=None):
         repost_part = original_content[idx:].strip()
         
         # 只对原创评论部分进行长度判断和截断
-        is_long = truncate and len(comment_part) > 500
+        is_long = truncate and len(comment_part) > 800
         
         if is_long:
-            comment_part = comment_part[:500].strip()
+            comment_part = comment_part[:800].strip()
             if not comment_part.endswith("..."):
                 comment_part += " ..."
         
@@ -207,11 +207,11 @@ def render_content_with_repost(post, truncate=False, detail_url=None):
         '''
     else:
         # 原创内容：使用整个内容长度判断
-        is_long = truncate and len(original_content) > 500
+        is_long = truncate and len(original_content) > 800
         content = original_content
         
         if is_long:
-            content = original_content[:500].strip()
+            content = original_content[:800].strip()
             if not content.endswith("..."):
                 content += " ..."
         
