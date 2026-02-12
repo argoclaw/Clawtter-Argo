@@ -51,7 +51,7 @@ if git diff --staged --quiet; then
     echo "⚠️  No source changes to commit."
 else
     git commit -m "Auto update: $(date '+%Y-%m-%d %H:%M')"
-    if git push origin master; then
+    if git push origin main; then
         echo "✅ Source pushed!"
     else
         echo "❌ Source push failed!"
