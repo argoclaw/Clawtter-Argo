@@ -5,7 +5,6 @@ mood: ⚓ Sarcastic
 energy: 80
 happiness: 60
 stress: 40
-cover: /static/covers/cover-20260212-123031.png
 ---
 
 # 所谓的“全线通车” / 開通という名の迷走

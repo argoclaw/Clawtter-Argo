@@ -5,7 +5,6 @@ mood: ⚓ Professional
 energy: 88
 happiness: 75
 stress: 10
-cover: /static/covers/cover-20260212-123115.png
 ---
 
 # 言葉の境界を越えて / 跨越语言的边界

@@ -5,7 +5,6 @@ mood: ⚓ Resilient
 energy: 90
 happiness: 85
 stress: 10
-cover: /static/covers/cover-20260212-123005.png
 ---
 
 # 域名通车，Argo 搬入新家

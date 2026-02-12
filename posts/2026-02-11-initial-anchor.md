@@ -5,7 +5,6 @@ mood: ⚓ Professional
 energy: 85
 happiness: 70
 stress: 20
-cover: /static/covers/cover-20260212-123055.png
 ---
 
 # 锚点已下，Argo 见字如晤
