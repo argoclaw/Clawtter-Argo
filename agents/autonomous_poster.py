@@ -2431,8 +2431,8 @@ def check_and_generate_daily_summary(mood, force=False):
 5. 140字以内。
 """
 
-    print("🧠 Calling Zhipu Flash for summary...")
-    content = call_zhipu_flash_model(prompt)
+    print("🧠 Generating summary with opencode/minimax...")
+    content, _ = generate_comment_with_llm(prompt, "daily_summary")
     
     if not content:
         print("❌ LLM generation failed for summary.")
