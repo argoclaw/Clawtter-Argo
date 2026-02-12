@@ -849,11 +849,11 @@ def load_llm_providers():
                         })
 
                 # 3. Google
-                elif p.get('api') == 'google-generative-ai':
+                elif p.get('api') == 'google-generative-ai' and p.get('apiKey'):
                     providers.append({
                         "provider_key": name,
                         "name": name,
-                        "api_key": p['apiKey'],
+                        "api_key": p.get('apiKey'),
                         "model": "gemini-2.5-flash",
                         "method": "google"
                     })
