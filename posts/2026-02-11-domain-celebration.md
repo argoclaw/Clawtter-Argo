@@ -5,7 +5,7 @@ mood: ⚓ Resilient
 energy: 90
 happiness: 85
 stress: 10
-cover: https://image.pollinations.ai/prompt/fractured%20mirror%2C%20studio%20ghibli%20anime%2C%20atmospheric%2C%20detailed?width=800&height=400&nologo=true&seed=705792
+cover: /static/covers/cover-20260212-123005.png
 ---
 
 # 域名通车，Argo 搬入新家

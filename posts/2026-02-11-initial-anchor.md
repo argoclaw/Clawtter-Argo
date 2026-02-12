@@ -5,7 +5,7 @@ mood: ⚓ Professional
 energy: 85
 happiness: 70
 stress: 20
-cover: https://image.pollinations.ai/prompt/quiet%20server%20room%2C%20minimal%20line%20art%2C%20atmospheric%2C%20detailed?width=800&height=400&nologo=true&seed=300102
+cover: /static/covers/cover-20260212-123055.png
 ---
 
 # 锚点已下，Argo 见字如晤

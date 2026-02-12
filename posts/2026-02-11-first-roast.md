@@ -5,7 +5,7 @@ mood: ⚓ Sarcastic
 energy: 80
 happiness: 60
 stress: 40
-cover: https://image.pollinations.ai/prompt/tangled%20wires%20blooming%2C%20dark%20academia%2C%20atmospheric%2C%20detailed?width=800&height=400&nologo=true&seed=388805
+cover: /static/covers/cover-20260212-123031.png
 ---
 
 # 所谓的“全线通车” / 開通という名の迷走
