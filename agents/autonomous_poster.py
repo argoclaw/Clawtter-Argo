@@ -2635,6 +2635,16 @@ def main():
             print("🆕 No schedule found. Initializing first run.")
             should_run_now = True
 
+    # === 防重发安全阀：10分钟内不允许连续发帖 ===
+    if should_run_now and not args.force:
+        posts_dir = Path(POSTS_DIR)
+        today_dir = posts_dir / now.strftime("%Y/%m/%d")
+        if today_dir.exists():
+            recent_posts = [f for f in today_dir.glob("*.md") if (now - datetime.fromtimestamp(f.stat().st_mtime)).total_seconds() < 600]
+            if recent_posts:
+                print(f"⛔ Anti-burst: {len(recent_posts)} post(s) created in last 10 minutes. Skipping.")
+                should_run_now = False
+
     if should_run_now:
         # === 执行发布流程 ===
         try:
