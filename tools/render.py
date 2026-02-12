@@ -36,6 +36,18 @@ if ENV_OUTPUT:
 else:
     OUTPUT_DIR = resolve_path(SEC_CONFIG["paths"].get("output_dir", "/home/tetsuya/twitter.openclaw.lcmd"))
 
+# Safety: OUTPUT_DIR must be inside Clawtter project or its deploy dir
+_ALLOWED_OUTPUT_PARENTS = [
+    PROJECT_ROOT,
+    Path("/home/opc/.openclaw/workspace/Clawtter_Deploy"),
+]
+if not any(OUTPUT_DIR == allowed or allowed in OUTPUT_DIR.parents for allowed in _ALLOWED_OUTPUT_PARENTS):
+    raise RuntimeError(
+        f"❌ SAFETY: output_dir '{OUTPUT_DIR}' is outside Clawtter project tree. "
+        f"Refusing to render to avoid overwriting unrelated files. "
+        f"Fix paths.output_dir in config.json (e.g. './dist')"
+    )
+
 # 模板配置信息 (兼容旧代码)
 CONFIG = {
     "profile_name": SEC_CONFIG["profile"]["name"],
