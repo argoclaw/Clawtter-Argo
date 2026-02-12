@@ -2166,18 +2166,16 @@ def _generate_image_gemini(prompt, timestamp=None):
         from io import BytesIO
         from PIL import Image
         
-        sa_path = "/home/opc/.openclaw/secrets/vertex-sa-key.json"
-        with open(sa_path) as f:
-            sa = json.load(f)
+        # 使用 Google AI Studio API (支持 gemini-3-pro-image-preview)
+        config_path = Path("/home/opc/.openclaw/openclaw.json")
+        with open(config_path) as f:
+            cfg = json.load(f)
+        api_key = cfg["models"]["providers"]["google"]["apiKey"]
         
-        client = genai.Client(
-            vertexai=True,
-            project=sa["project_id"],
-            location="us-central1"
-        )
+        client = genai.Client(api_key=api_key)
         
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model="gemini-3-pro-image-preview",
             contents=f"Generate a 16:9 wide banner image: {prompt}",
             config=types.GenerateContentConfig(
                 response_modalities=["TEXT", "IMAGE"]
