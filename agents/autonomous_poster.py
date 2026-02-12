@@ -2659,7 +2659,7 @@ def main():
         # === 计算下一次发布时间 (排期) ===
         # 根据时间段决定延迟
         hour = datetime.now().hour
-        if 1 <= hour <= 7: # 深夜
+        if 0 <= hour <= 5: # 深夜
             wait_minutes = random.randint(120, 300)
         else: # 白天
             wait_minutes = random.randint(30, 90)
