@@ -1754,12 +1754,13 @@ def build_system_prompt(style, mood=None):
             owner_style += f"- {item}\n"
 
 
-    # Load Soul from global workspace
+    # Load Identity + Soul from global workspace
+    identity_file = Path("/home/opc/.openclaw/workspace/IDENTITY.md")
     soul_file = Path("/home/opc/.openclaw/workspace/SOUL.md")
-    if soul_file.exists():
-        voice_guidance = soul_file.read_text(encoding="utf-8").strip()
-    else:
-        # Fallback if SOUL.md missing (should not happen)
+    identity_text = identity_file.read_text(encoding="utf-8").strip() if identity_file.exists() else ""
+    soul_text = soul_file.read_text(encoding="utf-8").strip() if soul_file.exists() else ""
+    voice_guidance = (identity_text + "\n\n" + soul_text).strip() if identity_text else soul_text
+    if not voice_guidance:
         voice_guidance = "【声音基调】\n保持简洁，观点鲜明，像个真人。"
 
     shift = _select_voice_shift(mood)
@@ -2497,9 +2498,12 @@ def check_and_generate_daily_summary(mood, force=False):
     if not activity_text:
         activity_text = "（今日无特殊记录，可能是刚刚初始化或记忆重启）"
 
-    # Load Soul from global workspace
+    # Load Identity + Soul from global workspace
+    identity_file = Path("/home/opc/.openclaw/workspace/IDENTITY.md")
     soul_file = Path("/home/opc/.openclaw/workspace/SOUL.md")
+    identity_content = identity_file.read_text(encoding="utf-8").strip() if identity_file.exists() else ""
     soul_content = soul_file.read_text(encoding="utf-8").strip() if soul_file.exists() else ""
+    soul_content = (identity_content + "\n\n" + soul_content).strip() if identity_content else soul_content
 
     # 构建 Prompt
     prompt = f"""
