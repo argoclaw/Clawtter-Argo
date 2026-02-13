@@ -2219,6 +2219,78 @@ def generate_vertex_imagen(prompt, timestamp=None):
         return None
 
 
+def _extract_post_body(filepath):
+    """从 md 文件提取 frontmatter 之后的正文"""
+    try:
+        text = Path(filepath).read_text(encoding='utf-8')
+        parts = text.split('---', 2)
+        if len(parts) >= 3:
+            return parts[2].strip()
+        return text.strip()
+    except Exception:
+        return ""
+
+def _tokenize(text):
+    """简单分词：中文逐字 + 英文按空格，去掉短 token"""
+    # Remove punctuation and normalize
+    text = re.sub(r'[^\w\s]', ' ', text.lower())
+    tokens = set()
+    for word in text.split():
+        if len(word) <= 1:
+            continue
+        # For CJK characters, use bigrams
+        if any('\u4e00' <= c <= '\u9fff' for c in word):
+            for i in range(len(word) - 1):
+                tokens.add(word[i:i+2])
+        else:
+            tokens.add(word)
+    return tokens
+
+def _jaccard_similarity(set_a, set_b):
+    if not set_a or not set_b:
+        return 0.0
+    return len(set_a & set_b) / len(set_a | set_b)
+
+def _get_recent_posts(n=10):
+    """获取最近 n 篇帖子的路径，按修改时间倒序"""
+    posts_dir = Path(POSTS_DIR)
+    if not posts_dir.exists():
+        return []
+    all_posts = sorted(posts_dir.rglob('*.md'), key=lambda p: p.stat().st_mtime, reverse=True)
+    return all_posts[:n]
+
+def _check_dedup(content, threshold=0.6):
+    """
+    检查新内容是否与最近帖子重复。
+    返回 (is_dup, reason) — is_dup=True 表示应跳过。
+    """
+    recent = _get_recent_posts(10)
+    new_tokens = _tokenize(content)
+    if not new_tokens:
+        return False, ""
+
+    for post_path in recent:
+        body = _extract_post_body(post_path)
+        if not body:
+            continue
+        old_tokens = _tokenize(body)
+        sim = _jaccard_similarity(new_tokens, old_tokens)
+        if sim > threshold:
+            return True, f"与 {post_path.name} 相似度 {sim:.1%} > {threshold:.0%}"
+
+    # 30 分钟窗口检查
+    now = datetime.now()
+    for post_path in recent:
+        try:
+            mtime = datetime.fromtimestamp(post_path.stat().st_mtime)
+            if (now - mtime).total_seconds() < 1800:  # 30 min
+                return True, f"30分钟内已有帖子 {post_path.name}（{mtime:%H:%M:%S}）"
+        except Exception:
+            continue
+
+    return False, ""
+
+
 def create_post(content, mood, suffix="auto"):
     """创建 Markdown 推文文件"""
 
@@ -2398,6 +2470,13 @@ def create_post(content, mood, suffix="auto"):
     front_matter.append("---")
 
     md_content = "\n".join(front_matter) + f"\n\n{content}\n"
+
+    # --- DEDUP CHECK ---
+    is_dup, dup_reason = _check_dedup(content)
+    if is_dup:
+        print(f"🔄 Dedup: 跳过发帖 — {dup_reason}")
+        return None
+    # --- DEDUP CHECK END ---
 
     # --- SECURITY HOOK: GLOBAL FILTER ---
     # 在写入文件之前，对整个 merged content 做最后一道检查
