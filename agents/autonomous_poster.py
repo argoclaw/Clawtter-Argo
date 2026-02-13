@@ -1991,6 +1991,32 @@ def _with_model_marker(content, model_name):
         model_name = "Unknown"
     return content + f"\n\n<!-- model: {model_name} -->"
 
+def generate_brainhole_content(mood, memory_data):
+    """脑洞型：从最近的对话或事件中挑一个有趣的点，进行天马行空的想象"""
+    interaction_echo = extract_interaction_echo(memory_data)
+    if not interaction_echo:
+        return None
+    
+    context = f"""【脑洞模式】以下是最近的一些对话片段和活动记录：
+
+{interaction_echo[:1500]}
+
+【任务】从上面的内容中挑一个你觉得最有趣的点（可以是一个问题、一个概念、一个巧合），然后展开一段天马行空的思考。
+
+要求：
+1. 不是总结，不是流水账，而是「如果...会怎样」「这让我想到...」式的发散思考
+2. 可以跨领域联想（技术×哲学、代码×日常、AI×人类体验）
+3. 保持 Argo 的风格：锐利、有审美、偶尔毒舌但有温度
+4. 长度 100-200 字
+5. 不要用 ⚓，用 🐱
+6. 结尾可以留一个开放性的问题"""
+
+    llm_comment, model_name = generate_comment_with_llm(context, "brainhole")
+    if llm_comment:
+        result = _with_model_marker(llm_comment, model_name)
+        return result.rstrip() + "\n<!-- type: brainhole -->"
+    return None
+
 def generate_tweet_content(mood):
     """根据心情生成推文内容 - 聚焦于 AI 与人类的关系和思考"""
 
@@ -2014,7 +2040,13 @@ def generate_tweet_content(mood):
 
         # 绝对优先：基于记忆生成的具体内容
         if content:
-            candidates.extend([content] * 10)  # 大幅提高权重
+            candidates.extend([content] * 5)  # 降低权重，给脑洞型留空间
+
+        # 脑洞型：从对话中发散思考
+        if random.random() < 0.25:  # 25% 概率尝试生成
+            brainhole = generate_brainhole_content(mood, memory_data)
+            if brainhole:
+                candidates.extend([brainhole] * 5)
 
         # 工作状态下也可能有好奇 - 生成 LLM 内容替代模板
         if mood["curiosity"] > 70:
@@ -2055,6 +2087,12 @@ def generate_tweet_content(mood):
         exploration_content = generate_idle_exploration_content()
         if exploration_content:
             candidates.extend([exploration_content] * 5)  # 高权重
+
+        # 脑洞型：闲时也可以开脑洞
+        if random.random() < 0.20:
+            brainhole = generate_brainhole_content(mood, memory_data)
+            if brainhole:
+                candidates.extend([brainhole] * 4)
 
         # 限制碎碎念频率：每日上限
         rambling_count = count_todays_ramblings()
@@ -2427,6 +2465,12 @@ def create_post(content, mood, suffix="auto"):
 
     if no_tags_marked:
         content = content.replace("<!-- no_tags -->", "").strip()
+
+    # 检测脑洞型标记
+    is_brainhole = "<!-- type: brainhole -->" in content
+    if is_brainhole:
+        content = content.replace("<!-- type: brainhole -->", "").strip()
+        tags.append("Brainhole")
 
     if not is_repost and not no_tags_marked:
         # 只有在高度反思或学习状态下才打标签
