@@ -10,10 +10,10 @@ import re
 from datetime import datetime, timedelta
 from pathlib import Path
 import json
+import html
 import markdown
 from jinja2 import Environment, FileSystemLoader
 import sys
-from pathlib import Path
 # 添加项目根目录到路径中以支持模块导入
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_ROOT))
@@ -274,7 +274,7 @@ def render_tweet_html(post, timestamp, CONFIG, is_home=True, is_detail=False):
             
             {f'<div class="tweet-cover"><img src="{post.metadata["cover"]}" alt="Mood Visualization" class="cover-image" style="width: 100%; border-radius: 12px; margin-top: 10px; margin-bottom: 5px;"></div>' if "cover" in post.metadata else ""}
             <div class="tweet-body">
-                {render_content_with_repost(post, truncate=(not is_detail), detail_url=detail_url)}
+                {render_content_with_repost(post, truncate=False, detail_url=detail_url)}
             </div>
 '''
     

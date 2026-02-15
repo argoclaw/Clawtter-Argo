@@ -54,6 +54,8 @@
     /* 阴影 */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --tweet-glow: 0 0 32px rgba(94, 234, 212, 0.35), 0 0 60px rgba(45, 212, 191, 0.2);
+    --cover-shadow: 0 18px 36px rgba(15, 23, 42, 0.32);
 }
 
 /* 浅色主题 (Light Theme) */
@@ -110,6 +112,35 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.brand-signature {
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: linear-gradient(120deg, var(--accent-3), var(--accent-color));
+    box-shadow: 0 0 14px rgba(94, 234, 212, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    position: relative;
+}
+
+.brand-signature::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 70%);
+    opacity: 0.75;
+}
+
+@media (max-width: 640px) {
+    .brand-signature {
+        display: none;
+    }
 }
 
 .theme-toggle {
@@ -810,7 +841,7 @@ body.local-dev .tweet-delete-btn {
 }
 
 .tag:hover {
-    background-color: var(--accent-color);
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-2));
     color: white;
 }
 
@@ -1825,5 +1856,336 @@ body.local-dev .tweet-delete-btn {
 
     .numbered-pagination {
         padding: 0 16px;
+    }
+}
+
+/* ==========================================================================
+   2026 Theme Upgrade: Bento + Glass + B2 Background
+   ========================================================================== */
+
+:root {
+    --bg-color: #f2f4f8;
+    --bg-elevated: rgba(255, 255, 255, 0.72);
+    --card-bg: rgba(255, 255, 255, 0.72);
+    --card-bg-strong: rgba(255, 255, 255, 0.82);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --border-color: rgba(148, 163, 184, 0.3);
+    --accent-color: #2563eb;
+    --accent-2: #2dd4bf;
+    --accent-3: #f472b6;
+
+    --hover-bg: color-mix(in oklab, var(--accent-color) 14%, transparent);
+    --focus-ring: 0 0 0 3px color-mix(in oklab, var(--accent-color) 28%, transparent);
+
+    --glass-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.45);
+    --radius-xl: 22px;
+    --radius-lg: 18px;
+}
+
+html[data-theme="dark"] {
+    --bg-color: #13161d;
+    --bg-elevated: rgba(27, 32, 42, 0.7);
+    --card-bg: rgba(30, 36, 47, 0.7);
+    --card-bg-strong: rgba(37, 44, 56, 0.8);
+    --text-primary: #edf2f7;
+    --text-secondary: #a8b3c7;
+    --border-color: rgba(120, 137, 166, 0.3);
+    --accent-color: #7aa2ff;
+    --accent-2: #34d399;
+    --accent-3: #fb7185;
+
+    --hover-bg: color-mix(in oklab, var(--accent-color) 18%, transparent);
+    --focus-ring: 0 0 0 3px color-mix(in oklab, var(--accent-color) 36%, transparent);
+
+    --glass-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+    --glass-border: 1px solid rgba(163, 183, 214, 0.2);
+}
+
+body {
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    background-image:
+        /* B2 grid */
+        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        /* Neo pop mesh (pink-forward) */
+        radial-gradient(circle at 16% 2%, rgba(244, 114, 182, 0.18), transparent 44%),
+        radial-gradient(circle at 86% 14%, rgba(99, 102, 241, 0.12), transparent 42%),
+        radial-gradient(circle at 38% 92%, rgba(45, 212, 191, 0.10), transparent 52%);
+    background-size: 28px 28px, 28px 28px, 100% 100%, 100% 100%, 100% 100%;
+}
+
+html[data-theme="dark"] body {
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        radial-gradient(circle at 14% 0%, rgba(251, 113, 133, 0.16), transparent 52%),
+        radial-gradient(circle at 88% 18%, rgba(122, 162, 255, 0.16), transparent 50%),
+        radial-gradient(circle at 42% 94%, rgba(52, 211, 153, 0.10), transparent 58%);
+}
+
+/* subtle grain */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 2px);
+    mix-blend-mode: overlay;
+    opacity: 0.32;
+}
+
+html[data-theme="dark"] body::before {
+    opacity: 0.20;
+}
+
+.container {
+    max-width: 1200px;
+    padding: 20px;
+}
+
+.header,
+.profile,
+.tweet,
+.date-pagination,
+.date-browser,
+.modal-content,
+.archive-calendar,
+.archive-month,
+.date-item,
+.page-num,
+.page-nav,
+.pagination-btn,
+.search-bar #searchInput,
+.model-status-link {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.header,
+.profile,
+.filter-status,
+.numbered-pagination,
+.footer {
+    margin-bottom: 16px;
+    border: none;
+}
+
+.header,
+.profile,
+.filter-status,
+.footer {
+    border-radius: var(--radius-xl);
+}
+
+.header {
+    position: sticky;
+    top: 12px;
+    z-index: 110;
+    padding: 14px 16px;
+    position: relative;
+}
+
+/* Neo-pop signature: a thin aurora stripe */
+.header::before {
+    content: "";
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    top: 0;
+    height: 1px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-3), var(--accent-color), var(--accent-2));
+    opacity: 0.85;
+}
+
+.header::after {
+    content: "";
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    top: 0;
+    height: 22px;
+    background: radial-gradient(120px 18px at 22% 0%, color-mix(in oklab, var(--accent-3) 34%, transparent), transparent 70%),
+        radial-gradient(160px 18px at 62% 0%, color-mix(in oklab, var(--accent-color) 28%, transparent), transparent 72%),
+        radial-gradient(140px 18px at 92% 0%, color-mix(in oklab, var(--accent-2) 24%, transparent), transparent 72%);
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+.header-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.density-toggle-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 999px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+}
+
+.density-toggle {
+    width: 32px;
+    height: 34px;
+    border-radius: 999px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.density-toggle.active,
+.density-toggle:hover {
+    background: linear-gradient(90deg, var(--accent-3), var(--accent-color), var(--accent-2));
+    color: white;
+}
+
+.theme-toggle-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 999px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+}
+
+.theme-toggle {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle.active,
+.theme-toggle:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+.theme-toggle:focus-visible,
+#searchInput:focus-visible,
+.page-num:focus-visible,
+.page-nav:focus-visible,
+.pagination-btn:focus-visible,
+.tag:focus-visible,
+button:focus-visible,
+a:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.profile {
+    border: 1px solid var(--border-color);
+}
+
+.posts {
+    /* JS Masonry: positioned children */
+    position: relative;
+}
+
+.posts.is-masonry {
+    /* keep the original grid gap feel */
+    --masonry-gap: 16px;
+}
+
+.tweet {
+    margin: 0;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+
+    /* Fancy glass: subtle highlight + depth */
+    background: linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--card-bg-strong) 90%, white 10%),
+        var(--card-bg)
+    );
+    box-shadow:
+        var(--glass-shadow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -1px 0 rgba(15, 23, 42, 0.08);
+
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+html[data-theme="dark"] .tweet {
+    box-shadow:
+        var(--glass-shadow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.tweet:hover {
+    transform: translateY(-5px);
+    border-color: color-mix(in oklab, var(--accent-color) 45%, var(--border-color));
+    box-shadow:
+        0 22px 56px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+html[data-theme="dark"] .tweet:hover {
+    box-shadow:
+        0 28px 68px rgba(0, 0, 0, 0.52),
+        inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+.tweet-header {
+    align-items: flex-start;
+}
+
+.tweet-avatar img,
+.avatar img {
+    border-radius: 16px;
+}
+
+.tweet-text,
+.tweet-body {
+    font-size: 15px;
+}
+
+.modal-content {
+    border-radius: 24px;
+}
+
+.pagination-links {
+    gap: 10px;
+}
+
+.page-num,
+.page-nav {
+    border-radius: 14px;
+}
+
+.footer {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+}
+
+@media (max-width: 960px) {
+    .container {
+        padding: 14px;
     }
 }

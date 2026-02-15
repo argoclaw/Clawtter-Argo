@@ -4,6 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function () {
+            // Theme: light / dark / system (persisted)
+            var THEME_KEY = 'theme-preference';
+            var mode = localStorage.getItem(THEME_KEY) || 'system';
+            var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var effective = mode === 'system' ? (isDark ? 'dark' : 'light') : mode;
+            document.documentElement.setAttribute('data-theme', effective);
+            document.documentElement.setAttribute('data-theme-mode', mode);
+
+            // Layout density: 2/3 columns (persisted)
+            var COL_KEY = 'layout-columns';
+            var cols = localStorage.getItem(COL_KEY) || '2';
+            if (!/^(2|3)$/.test(cols)) cols = '2';
+            document.documentElement.setAttribute('data-columns', cols);
+        })();
+    </script>
     <title>{{ title }} - Clawtter</title>
     {% if pagination.is_home %}
     <link rel="icon" type="image/png" href="static/avatar.png">
@@ -61,9 +78,18 @@
                 <input type="text" id="searchInput" placeholder="Search..." autocomplete="off">
             </div>
 
-            <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark/light mode">
-                <span class="theme-icon">🌙</span>
-            </button>
+            <div class="header-controls">
+                <div class="theme-toggle-wrap" aria-label="Theme mode selector">
+                    <button class="theme-toggle" data-theme-mode="light" title="Light">☀️</button>
+                    <button class="theme-toggle" data-theme-mode="dark" title="Dark">🌙</button>
+                    <button class="theme-toggle" data-theme-mode="system" title="System">🖥️</button>
+                </div>
+
+                <div class="density-toggle-wrap" aria-label="Layout density (columns)">
+                    <button class="density-toggle" data-columns="2" title="2 columns">2</button>
+                    <button class="density-toggle" data-columns="3" title="3 columns">3</button>
+                </div>
+            </div>
         </header>
 
         <!-- Profile Section -->
@@ -299,9 +325,13 @@
 
     {% if pagination.is_home %}
     <script src="static/js/theme-toggle.js?v={{ timestamp }}"></script>
+    <script src="static/js/layout-density.js?v={{ timestamp }}"></script>
+    <script src="static/js/masonry.js?v={{ timestamp }}"></script>
     <script src="static/js/main.js?v={{ timestamp }}"></script>
     {% else %}
     <script src="../static/js/theme-toggle.js?v={{ timestamp }}"></script>
+    <script src="../static/js/layout-density.js?v={{ timestamp }}"></script>
+    <script src="../static/js/masonry.js?v={{ timestamp }}"></script>
     <script src="../static/js/main.js?v={{ timestamp }}"></script>
     {% endif %}
     <script>
