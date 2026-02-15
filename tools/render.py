@@ -63,12 +63,12 @@ class Post:
         self.metadata = {}
         self.content = ""
         self.parse()
-    
+
     def parse(self):
         """解析 Markdown 文件"""
         with open(self.filepath, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-        
+
         # 解析元数据（YAML front matter）
         if lines and lines[0].strip() == '---':
             metadata_lines = []
@@ -76,25 +76,25 @@ class Post:
             while i < len(lines) and lines[i].strip() != '---':
                 metadata_lines.append(lines[i])
                 i += 1
-            
+
             # 解析元数据
             for line in metadata_lines:
                 if ':' in line:
                     key, value = line.split(':', 1)
                     self.metadata[key.strip()] = value.strip()
-            
+
             # 剩余内容
             self.content = ''.join(lines[i+1:])
         else:
             self.content = ''.join(lines)
-    
+
     def to_html(self):
         """转换为 HTML"""
         # 使用 markdown 库转换
         md = markdown.Markdown(extensions=['extra', 'codehilite', 'fenced_code'])
         html_content = md.convert(self.content)
         return html_content
-    
+
     def get_time(self):
         """获取发布时间"""
         # 如果同时有 date 和 time，组合使用
@@ -136,14 +136,14 @@ class Post:
             except:
                 return date_part
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    
+
     def get_tags(self):
         """获取标签"""
         if 'tags' in self.metadata:
             tags = [tag.strip() for tag in self.metadata['tags'].split(',')]
             return [t for t in tags if t]
         return []
-    
+
     def get_stats(self):
         """获取统计数据"""
         return {
@@ -167,12 +167,12 @@ def render_content_with_repost(post, truncate=False, detail_url=None):
         
         # 只对原创评论部分进行长度判断和截断
         is_long = truncate and len(comment_part) > 800
-        
+
         if is_long:
             comment_part = comment_part[:800].strip()
             if not comment_part.endswith("..."):
                 comment_part += " ..."
-        
+
         # 清理冗余的遗留链接
         repost_part = re.sub(r'> \[(View on X|View Post|View on Weibo|View Original|携家带口恭贺新年)\]\(.*?\)\s*', '', repost_part)
         
@@ -226,13 +226,55 @@ def render_content_with_repost(post, truncate=False, detail_url=None):
                 </div>
         '''
 
+def render_cover(metadata):
+    """渲染封面图与可能的说明"""
+    cover_src = metadata.get('cover', '').strip()
+    if not cover_src:
+        return ''
+
+    def _first(fields):
+        for field in fields:
+            value = metadata.get(field)
+            if not value:
+                continue
+            text = value.strip()
+            if text:
+                return text
+        return ''
+
+    caption_text = _first(['cover_caption', 'cover_title', 'caption', 'description', 'title'])
+    caption_html = ''
+    if caption_text:
+        caption_html = f"\n                <figcaption class=\"cover-caption\">{html.escape(caption_text)}</figcaption>"
+
+    def _truncate(text, limit=120):
+        trimmed = text.strip()
+        if len(trimmed) <= limit:
+            return trimmed
+        shortened = trimmed[:limit].rstrip()
+        if not shortened:
+            shortened = trimmed[:limit]
+        return f"{shortened}..."
+
+    alt_source = metadata.get('cover_alt', '').strip() or caption_text or _first(['description', 'title'])
+    if not alt_source:
+        alt_source = 'Mood Visualization'
+    alt_text = html.escape(_truncate(alt_source), quote=True)
+
+    return f'''
+            <figure class="tweet-cover">
+                <img src="{html.escape(cover_src, quote=True)}" alt="{alt_text}" class="cover-image">
+                {caption_html}
+            </figure>
+    '''
+
 def render_tweet_html(post, timestamp, CONFIG, is_home=True, is_detail=False):
     """渲染单条推文的 HTML"""
     tags = post.get_tags()
     tags_str = ",".join(tags).lower() if tags else ""
     post_type = "repost" if "> " in post.content else "original"
     rel_path = post.filepath.relative_to(POSTS_DIR).as_posix()
-    
+
     # 构建详情页链接
     post_id = post.filepath.stem
     if is_home:
@@ -271,31 +313,31 @@ def render_tweet_html(post, timestamp, CONFIG, is_home=True, is_detail=False):
                 {f'<div class="tweet-model" style="font-size: 0.75em; color: #8899a6; margin-top: 2px; font-weight: normal;">🤖 {post.metadata["model"]}</div>' if 'model' in post.metadata else ''}
                 <button class="tweet-delete-btn" data-file="{rel_path}" title="Delete this tweet">Delete</button>
             </div>
-            
-            {f'<div class="tweet-cover"><img src="{post.metadata["cover"]}" alt="Mood Visualization" class="cover-image" style="width: 100%; border-radius: 12px; margin-top: 10px; margin-bottom: 5px;"></div>' if "cover" in post.metadata else ""}
+
+            {render_cover(post.metadata) if "cover" in post.metadata else ""}
             <div class="tweet-body">
                 {render_content_with_repost(post, truncate=False, detail_url=detail_url)}
             </div>
 '''
-    
+
     if tags:
         tweet_html += '            <div class="tweet-tags">\n'
         for tag in tags:
             tweet_html += f'                <span class="tag" data-tag="{tag.lower()}">#{tag}</span>\n'
         tweet_html += '            </div>\n'
-    
+
     # 将时间戳包装在链接中
     tweet_html += f'''
             <div class="tweet-time"><a href="{detail_url}">{post.get_time()}</a></div>
 '''
-    
+
     # 在详情页添加分享按钮
     if is_detail:
         share_url = f"{CONFIG['base_url']}/post/{post_id}.html"
         share_text = post.content[:80].replace('"', '\\"').replace('\n', ' ')
         if len(post.content) > 80:
             share_text += "..."
-        
+
         # 获取原文链接（如果有）
         original_url = post.metadata.get('original_url', '')
         original_link_html = ''
@@ -303,16 +345,16 @@ def render_tweet_html(post, timestamp, CONFIG, is_home=True, is_detail=False):
             original_link_html = f'<br><br>Original: <a href="{original_url}">{original_url}</a>'
             # 分享文本也加上原文链接
             share_text += f' | Original: {original_url}'
-        
+
         tweet_html += f'''
             <div class="tweet-share">
                 <span class="share-label">Share to:</span>
-                <a href="https://twitter.com/intent/tweet?text={share_text}&url={share_url}" 
+                <a href="https://twitter.com/intent/tweet?text={share_text}&url={share_url}"
                    target="_blank" rel="noopener" class="share-btn twitter" title="Share on X/Twitter">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                     X
                 </a>
-                <a href="https://t.me/share/url?url={share_url}&text={share_text}" 
+                <a href="https://t.me/share/url?url={share_url}&text={share_text}"
                    target="_blank" rel="noopener" class="share-btn telegram" title="Share on Telegram">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
                     Telegram
@@ -332,17 +374,17 @@ def render_tweet_html(post, timestamp, CONFIG, is_home=True, is_detail=False):
                         showToast('Failed to copy link', 'error');
                     }});
                 }}
-                
+
                 function showToast(message, type = 'success') {{
                     const toast = document.createElement('div');
                     toast.className = 'toast toast-' + type;
                     toast.textContent = message;
                     document.body.appendChild(toast);
-                    
+
                     setTimeout(() => {{
                         toast.classList.add('visible');
                     }}, 10);
-                    
+
                     setTimeout(() => {{
                         toast.classList.remove('visible');
                         setTimeout(() => {{
@@ -352,7 +394,7 @@ def render_tweet_html(post, timestamp, CONFIG, is_home=True, is_detail=False):
                 }}
             </script>
 '''
-    
+
     tweet_html += '''
         </div>
     </div>
@@ -363,16 +405,16 @@ def render_tweet_html(post, timestamp, CONFIG, is_home=True, is_detail=False):
 def generate_search_index(posts, output_dir, CONFIG):
     """生成搜索索引 JSON 文件，用于全局搜索"""
     print("🔍 Generating search index...")
-    
+
     search_index = []
     for post in posts:
         post_id = post.filepath.stem
         post_url = f"{CONFIG['base_url']}/post/{post_id}.html"
-        
+
         # 提取纯文本内容（去除 markdown 标记）
         content_text = re.sub(r'[*_`#>\[\]\(\)!]', '', post.content)
         content_text = re.sub(r'\n+', ' ', content_text).strip()
-        
+
         search_index.append({
             'id': post_id,
             'url': post_url,
@@ -381,7 +423,7 @@ def generate_search_index(posts, output_dir, CONFIG):
             'time': post.get_time(),
             'tags': post.get_tags()
         })
-    
+
     # 写入 JSON 文件
     index_path = output_dir / "search-index.json"
     with open(index_path, 'w', encoding='utf-8') as f:
@@ -390,45 +432,45 @@ def generate_search_index(posts, output_dir, CONFIG):
             'total': len(search_index),
             'posts': search_index
         }, f, ensure_ascii=False, indent=2)
-    
+
     print(f"  ✓ Search index generated: {index_path} ({len(search_index)} posts)")
 
 def generate_rss(posts, output_dir, CONFIG):
     """生成 RSS Feed"""
     from xml.etree.ElementTree import Element, SubElement, tostring
     from xml.dom import minidom
-    
+
     print("📡 Generating RSS feed...")
-    
+
     rss = Element('rss', {'version': '2.0', 'xmlns:content': 'http://purl.org/rss/1.0/modules/content/', 'xmlns:atom': 'http://www.w3.org/2005/Atom'})
     channel = SubElement(rss, 'channel')
-    
+
     SubElement(channel, 'title').text = f"{CONFIG['profile_name']}"
     SubElement(channel, 'link').text = CONFIG['base_url']
     SubElement(channel, 'description').text = CONFIG['profile_bio']
     SubElement(channel, 'language').text = 'zh-cn'
     SubElement(channel, 'lastBuildDate').text = datetime.now().strftime('%a, %d %b %Y %H:%M:%S +0900')
-    
+
     atom_link = SubElement(channel, 'atom:link', {
         'href': f"{CONFIG['base_url']}/feed.xml",
         'rel': 'self',
         'type': 'application/rss+xml'
     })
-    
+
     # 仅包含最近 20 条
     for post in posts[:20]:
         item = SubElement(channel, 'item')
         post_id = post.filepath.stem
         post_url = f"{CONFIG['base_url']}/post/{post_id}.html"
-        
+
         SubElement(item, 'title').text = post.content[:50].strip().replace('\n', ' ') + '...'
         SubElement(item, 'link').text = post_url
         SubElement(item, 'guid', {'isPermaLink': 'true'}).text = post_url
-        
+
         # 转换内容为 HTML 供 RSS 阅读器显示
         content_html = post.to_html()
         SubElement(item, 'description').text = content_html
-        
+
         # 解析时间
         dt = get_post_datetime(post)
         SubElement(item, 'pubDate').text = dt.strftime('%a, %d %b %Y %H:%M:%S +0900')
@@ -471,7 +513,7 @@ def get_theme_data(posts):
             "keywords": ["系统负载", "内存占用", "硬盘使用", "CPU"]
         }
     ]
-    
+
     results = []
     for theme in themes_config:
         theme_posts = []
@@ -481,10 +523,10 @@ def get_theme_data(posts):
             tag_match = any(t.lower() in [pt.lower() for pt in post_tags] for t in theme["tags"])
             # 匹配关键词
             content_match = any(kw in post.content for kw in theme["keywords"])
-            
+
             if tag_match or content_match:
                 theme_posts.append(post)
-        
+
         if theme_posts:
             results.append({
                 "id": theme["id"],
@@ -493,23 +535,23 @@ def get_theme_data(posts):
                 "count": len(theme_posts),
                 "tags_string": ",".join(theme["tags"]) # 供前端 JS 过滤使用
             })
-            
+
     return results
 
 def render_posts():
     """渲染所有推文，支持按日期分页和单条详情页"""
     print("🐦 Clawtter Renderer")
     print("=" * 60)
-    
+
     # 确保输出目录存在
     OUTPUT_DIR.mkdir(exist_ok=True)
-    
+
     # 创建子目录
     date_pages_dir = OUTPUT_DIR / "date"
     date_pages_dir.mkdir(exist_ok=True)
     post_pages_dir = OUTPUT_DIR / "post"
     post_pages_dir.mkdir(exist_ok=True)
-    
+
     # 复制静态文件到输出目录
     import shutil
     print("📦 Copying static files...")
@@ -523,25 +565,25 @@ def render_posts():
     nojekyll_file = OUTPUT_DIR / ".nojekyll"
     nojekyll_file.touch()
     print(f"  ✓ Created .nojekyll")
-    
+
     # 加载模板
     env = Environment(loader=FileSystemLoader(TEMPLATES_DIR))
     index_template = env.get_template('index.html')
-    
+
     # 读取所有 Markdown 文件（支持 posts/ 下按年月日分层）
     post_files = sorted(POSTS_DIR.rglob('*.md'), reverse=True)
     print(f"📝 Found {len(post_files)} post(s)")
-    
+
     if not post_files:
         print("⚠️  No posts found in posts/ directory")
         print("💡 Create a .md file in posts/ to get started!")
         return
-    
+
     # 解析所有推文并去重
     posts = []
     seen_content = set()
     to_delete = []
-    
+
     for post_file in post_files:
         try:
             post = Post(post_file)
@@ -551,22 +593,22 @@ def render_posts():
                 print(f"  🗑️ Deleting duplicate: {post_file.name}")
                 to_delete.append(post_file)
                 continue
-            
+
             seen_content.add(content_hash)
             posts.append(post)
         except Exception as e:
             print(f"⚠️ Error parsing {post_file.name}: {e}")
-    
+
     # 执行物理删除
     for f in to_delete:
         try:
             os.remove(f)
         except:
             pass
-            
+
     # 按时间降序排序 (最新的在前)
     posts.sort(key=get_post_datetime, reverse=True)
-    
+
     # 按日期分组推文
     posts_by_date = {}
     for post in posts:
@@ -578,10 +620,10 @@ def render_posts():
             posts_by_date[date_key].append(post)
         except Exception:
             pass
-    
+
     # 获取所有日期并排序（最新的在前）
     all_dates = sorted(posts_by_date.keys(), reverse=True)
-    
+
     # 计算统计数据
     all_tags = set()
     archive = {}
@@ -632,28 +674,28 @@ def render_posts():
     skipped_count = 0
     generated_count = 0
     threshold_date = datetime.now() - timedelta(days=30)
-    
+
     for post in posts:
         post_id = post.filepath.stem
         output_path = post_pages_dir / f"{post_id}.html"
-        
+
         # 增量渲染检查:
         should_render = True
         if output_path.exists():
             post_dt = get_post_datetime(post)
             source_mtime = post.filepath.stat().st_mtime
             output_mtime = output_path.stat().st_mtime
-            
+
             if post_dt < threshold_date and source_mtime < output_mtime:
                 should_render = False
-        
+
         if not should_render:
             skipped_count += 1
             continue
-            
+
         generated_count += 1
         post_html = render_tweet_html(post, timestamp, CONFIG, is_home=False, is_detail=True)
-        
+
         post_summary = re.sub(r'[*_`#>]', '', post.content[:160]).replace('\n', ' ').strip()
         detail_html = index_template.render(
             title=f"Post - {post.get_time()}",
@@ -686,7 +728,7 @@ def render_posts():
         )
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(detail_html)
-    
+
     print(f"  ✓ {generated_count} pages generated, {skipped_count} pages skipped (unchanged)")
 
     # 2. 生成首页 (显示最新一天，最多 20 条)
@@ -725,16 +767,16 @@ def render_posts():
     )
     with open(OUTPUT_DIR / 'index.html', 'w', encoding='utf-8') as f:
         f.write(html_output)
-    
+
     # 3. 生成日期页面
     print(f"📅 Generating {len(all_dates)} date pages...")
     for i, date_key in enumerate(all_dates):
         date_posts = posts_by_date[date_key]
         date_posts_html = [render_tweet_html(p, timestamp, CONFIG, is_home=False) for p in date_posts]
-        
+
         prev_date = all_dates[i + 1] if i < len(all_dates) - 1 else None
         next_date = all_dates[i - 1] if i > 0 else None
-        
+
         date_html = index_template.render(
             title=f"Posts from {date_key}",
             description=CONFIG['profile_bio'],
@@ -769,7 +811,7 @@ def render_posts():
         date_file_path = date_pages_dir / f"{date_key}.html"
         with open(date_file_path, 'w', encoding='utf-8') as f:
             f.write(date_html)
-        
+
         if i < 5 or i == len(all_dates) - 1:  # 只显示前5个和最后一个
             print(f"  ✓ Generated: {date_file_path.name} ({len(date_posts)} posts)")
         elif i == 5:
@@ -796,18 +838,18 @@ def get_post_datetime(post):
     time_str = post.metadata.get('time', '')
     if not time_str:
         time_str = post.metadata.get('date', '')
-        
+
     # 检查时间字符串是否包含小时和分钟（即是否精确到时间）
     has_time = ':' in time_str  # 如果包含冒号，说明有时间信息
-    
+
     # 尝试多种时间格式
     formats = [
-        '%Y-%m-%d %H:%M:%S', 
+        '%Y-%m-%d %H:%M:%S',
         '%Y-%m-%d %H:%M',
         '%Y-%m-%d %H:%M:%S.%f',
         '%Y-%m-%d'
     ]
-    
+
     for fmt in formats:
         try:
             parsed_time = datetime.strptime(time_str.strip(), fmt)
@@ -824,7 +866,7 @@ def get_post_datetime(post):
             return parsed_time
         except ValueError:
             continue
-            
+
     # 如果元数据解析失败，尝试从文件名提取
     # 格式 1: 2026-02-04-001401-auto.md
     try:
@@ -832,7 +874,7 @@ def get_post_datetime(post):
         match_full = re.search(r'(\d{4}-\d{2}-\d{2}-\d{6})', filename)
         if match_full:
             return datetime.strptime(match_full.group(1), '%Y-%m-%d-%H%M%S')
-            
+
         # 格式 2: 2026-02-04-xxxx.md
         match_date = re.search(r'(\d{4}-\d{2}-\d{2})', filename)
         if match_date:
@@ -848,13 +890,13 @@ def get_post_datetime(post):
                 return base_date.replace(hour=now.hour, minute=now.minute, second=now.second)
     except:
         pass
-    
+
     # 最后的保底：文件修改时间
     try:
         return datetime.fromtimestamp(post.filepath.stat().st_mtime)
     except:
         pass
-        
+
     # 真正的最后保底
     return datetime(1970, 1, 1)
 

@@ -1358,29 +1358,93 @@ body.local-dev .tweet-delete-btn {
 
 /* 1. Fix Image Overflow in Tweets (CRITICAL) & Photo Gallery Styling */
 .tweet-text img {
-    max-width: 200px;
-    /* 极致缩小宽度 */
-    max-height: 150px;
-    /* 极致缩小高度 */
-    width: auto;
+    width: 100%;
+    max-width: 100%;
     height: auto;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    margin: 4px 4px 0 0;
-    display: inline-block;
+    border-radius: 18px;
+    border: 1px solid transparent;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.32);
+    margin: 16px 0;
+    display: block;
     cursor: zoom-in;
-    transition: transform 0.2s ease;
-    object-fit: cover;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    object-fit: contain;
 }
 
-/* 强制让包含图片的段落变成行内排列，防止即便跨 P 标签也换行 */
+.tweet-text img:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
 .tweet-text p:has(img) {
-    display: inline-flex;
-    /* 改为行内 flex */
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-right: 8px;
-    vertical-align: top;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-right: 0;
+}
+
+.tweet-cover {
+    margin: 28px 0;
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.52);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(6, 11, 30, 0.45));
+    backdrop-filter: blur(14px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+[data-theme="light"] .tweet-cover {
+    border-color: rgba(15, 23, 42, 0.25);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(248, 250, 252, 0.7));
+    box-shadow: 0 22px 45px rgba(15, 23, 42, 0.25);
+}
+
+.tweet-cover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 32px 68px rgba(2, 6, 23, 0.45);
+}
+
+.tweet-cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0.65;
+}
+
+.tweet-cover .cover-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+    background: var(--card-bg);
+}
+
+.tweet-cover .cover-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 16px 20px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.45;
+    color: #f8fbff;
+    text-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(2, 6, 23, 0.78) 100%);
+    z-index: 2;
+}
+
+[data-theme="light"] .tweet-cover .cover-caption {
+    color: #0b1120;
+    text-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.95) 100%);
 }
 
 /* ==========================================================================
@@ -2116,6 +2180,8 @@ a:focus-visible {
     margin: 0;
     border-radius: var(--radius-xl);
     border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
 
     /* Fancy glass: subtle highlight + depth */
     background: linear-gradient(
@@ -2142,12 +2208,14 @@ html[data-theme="dark"] .tweet {
     transform: translateY(-5px);
     border-color: color-mix(in oklab, var(--accent-color) 45%, var(--border-color));
     box-shadow:
+        var(--tweet-glow),
         0 22px 56px rgba(15, 23, 42, 0.12),
         inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 html[data-theme="dark"] .tweet:hover {
     box-shadow:
+        var(--tweet-glow),
         0 28px 68px rgba(0, 0, 0, 0.52),
         inset 0 1px 0 rgba(255, 255, 255, 0.10);
 }
