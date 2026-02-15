@@ -2402,9 +2402,76 @@ def create_post(content, mood, suffix="auto"):
     # --- MOOD VISUALIZATION ---
     # 极端心情下生成配图 (Happiness > 80 or Stress > 80)
     mood_image_url = ""
+
+    # Diverse prompt pools (cross-style). Use as robust fallback when LLM prompt generation fails.
+    MOOD_PROMPT_POOL_HIGH = [
+        "Cinematic cyberpunk street portrait, neon rain, deep shadows, glitch artifacts, chromatic aberration, holographic signage, wet asphalt reflections, volumetric fog, high contrast, 35mm film look, intense mood, ultra-detailed",
+        "Brutalist dystopia skyline, crimson warning lights, heavy smog, surveillance drones, harsh top lighting, long shadows, gritty texture, desaturated palette, dystopian propaganda aesthetic, wide-angle, oppressive atmosphere",
+        "Surreal anxiety collage, fragmented mirror shards, distorted timepieces, motion blur trails, high-frequency noise, sickly green fluorescent lighting, uneasy symmetry, hyperreal textures, dream logic, unsettling calm",
+        "Abstract data-storm visualization, particle swarm forming a human silhouette, electric blue and magenta gradients, scanlines, UI overlays, lens flare, sharp micro-detail, futuristic minimalism, high energy, clean composition",
+        "Dark luxury noir portrait, single hard flash, glossy highlights, cigarette smoke haze, velvet blacks, sharp jawline lighting, cinematic bokeh, paparazzi vibe, 2000s editorial, tense expression, ultra-realistic",
+        "Post-apocalyptic sunrise, lone figure on rooftop, wind-blown coat, dust motes in golden rim light, collapsed city, dramatic sky, epic scale, high dynamic range, heroic melancholy, film still",
+        "Mecha-anime battle aftermath, shattered neon billboards, sparks and embers, rain mixed with ash, dynamic perspective, intense rim lighting, high detail mechanical debris, cinematic framing, kinetic tension",
+        "Gothic cathedral interior, stained glass casting violent color beams, dramatic chiaroscuro, floating dust, ornate textures, ritualistic atmosphere, deep blacks, high realism, solemn and overwhelming",
+        "Expressionist stress painting rendered as photoreal scene, smeared light trails, warped geometry, aggressive reds, harsh shadows, chaotic reflections, visceral atmosphere, high contrast, unsettling beauty",
+        "Underwater panic dream, half-submerged face, caustic light patterns, suspended bubbles, cold cyan palette, close-up macro, sharp eye focus, soft haze, surreal realism, claustrophobic calm",
+    ]
+
+    MOOD_PROMPT_POOL_MID = [
+        "Studio Ghibli-inspired city morning, soft pastel lighting, gentle haze, cozy small details, warm color grading, whimsical realism, calm atmosphere, wide establishing shot",
+        "Scandinavian minimal interior, natural window light, muted neutrals, clean lines, soft shadows, tactile materials, quiet mood, editorial photography style, high clarity",
+        "Retro 90s disposable camera snapshot, harsh on-camera flash, date-stamp vibe, slight blur, warm skin tones, messy candid framing, grain and noise, nostalgia mood",
+        "Dreamy watercolor illustration, soft paper texture, loose brush strokes, cool-to-warm gradient sky, minimal subject silhouette, poetic atmosphere, gentle bloom",
+        "High-fashion street style at golden hour, shallow depth of field, crisp textures, subtle lens flare, warm rim light, confident pose, premium editorial look, natural skin texture",
+        "Cozy café candid iPhone aesthetic, soft diffused daylight, realistic imperfections, mild motion blur in background, warm coffee tones, casual composition, natural color science",
+        "Ukiyo-e woodblock print reinterpretation of modern scene, flat color blocks, textured paper grain, bold outlines, elegant composition, restrained palette, calm storytelling",
+        "Isometric miniature diorama, museum-grade materials, soft studio lighting, shallow depth, tiny realistic props, clean backdrop, whimsical but polished, high detail",
+        "Film noir alley scene, wet cobblestones, single streetlamp, long shadows, smoke haze, monochrome with subtle sepia, cinematic composition, quiet tension",
+        "Sunlit countryside photo, gentle breeze in grass, soft clouds, warm natural tones, airy composition, relaxed mood, realistic detail, tranquil atmosphere",
+    ]
+
+    def _looks_like_image_prompt(s):
+        """Heuristic: comma-separated, mostly ASCII (English-ish), enough keywords."""
+        if not s:
+            return False
+        t = s.replace('\n', ' ').strip()
+        if len(t) < 30:
+            return False
+        if t.count(',') < 3:
+            return False
+        ascii_ratio = sum(1 for ch in t if ord(ch) < 128) / max(1, len(t))
+        return ascii_ratio > 0.9
+
+    def _pick_mood_fallback_prompt(ts, mood):
+        """Deterministic pick based on timestamp + mood intensity."""
+        try:
+            # Seed by timestamp down to second for determinism.
+            seed = int(ts.strftime('%Y%m%d%H%M%S'))
+        except Exception:
+            seed = 0
+        rnd = random.Random(seed)
+
+        intensity = max(mood.get('happiness', 0), mood.get('stress', 0))
+        if intensity > 80:
+            pool = MOOD_PROMPT_POOL_HIGH
+        elif intensity > 60:
+            pool = MOOD_PROMPT_POOL_MID
+        else:
+            pool = None
+
+        if pool:
+            return rnd.choice(pool)
+
+        # Last resort fallback (preserve original behavior).
+        return f"abstract AI feelings, {('cyberpunk' if mood.get('stress', 0) > 60 else 'anime style')}, distinct visual style"
+
     if mood["happiness"] > 80 or mood["stress"] > 80:
         try:
+            # Always prepare a deterministic fallback prompt (cross-style pool)
+            fallback_prompt = _pick_mood_fallback_prompt(timestamp, mood)
+
             # 生成 Image Prompt
+            prompt = ""
             if content:
                 img_prompt_instruction = f"""
 【任务】
@@ -2417,11 +2484,15 @@ def create_post(content, mood, suffix="auto"):
 4. 必须是画面描述，不是文字翻译。
 """
                 smart_prompt, _ = generate_comment_with_llm(img_prompt_instruction, "image_prompt")
-                prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else f"abstract digital art, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}"
-            else:
-                prompt = f"abstract AI feelings, {('cyberpunk' if mood['stress'] > 60 else 'anime style')}, distinct visual style"
+                smart_prompt = smart_prompt.replace('\n', ' ').strip() if smart_prompt else ""
 
-            if len(prompt) > 400: prompt = prompt[:400]
+                # Validate and fallback
+                prompt = smart_prompt if _looks_like_image_prompt(smart_prompt) else fallback_prompt
+            else:
+                prompt = fallback_prompt
+
+            if len(prompt) > 400:
+                prompt = prompt[:400]
 
             # 使用 Vertex AI Imagen 3 生成配图
             cover_path = generate_vertex_imagen(prompt, timestamp)
