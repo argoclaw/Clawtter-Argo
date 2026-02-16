@@ -2257,3 +2257,13 @@ html[data-theme="dark"] .tweet:hover {
         padding: 14px;
     }
 }
+
+@media (max-width: 768px) {
+    .density-toggle-wrap {
+        display: none;
+    }
+
+    .posts .tweet {
+        margin-bottom: 22px;
+    }
+}
