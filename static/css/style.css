@@ -2061,33 +2061,7 @@ html[data-theme="dark"] body::before {
     position: relative;
 }
 
-/* Neo-pop signature: a thin aurora stripe */
-.header::before {
-    content: "";
-    position: absolute;
-    left: 16px;
-    right: 16px;
-    top: 2px;
-    height: 0px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, rgba(244, 114, 182, 0.4), rgba(37, 99, 235, 0.35), rgba(45, 212, 191, 0.35));
-    opacity: 0.2;
-}
-
-.header::after {
-    content: "";
-    position: absolute;
-    left: 14px;
-    right: 14px;
-    top: 0;
-    height: 12px;
-    border-radius: 999px;
-    background: linear-gradient(120deg, rgba(244, 114, 182, 0.28), rgba(37, 99, 235, 0.24), rgba(45, 212, 191, 0.22));
-    opacity: 0.7;
-    filter: blur(0.5px);
-    mask-image: linear-gradient(90deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
-    pointer-events: none;
-}
+/* aurora stripe removed */
 
 .header-controls {
     display: inline-flex;
@@ -2178,7 +2152,7 @@ a:focus-visible {
 
 .posts.is-masonry {
     /* keep the original grid gap feel */
-    --masonry-gap: 16px;
+    --masonry-gap: 24px;
 }
 
 .tweet {
@@ -2263,12 +2237,18 @@ html[data-theme="dark"] .tweet:hover {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 960px) {
     .density-toggle-wrap {
         display: none;
     }
 
     .posts .tweet {
-        margin-bottom: 32px;
+        margin-bottom: 28px;
+    }
+}
+
+@media (max-width: 768px) {
+    .posts .tweet {
+        margin-bottom: 48px;
     }
 }

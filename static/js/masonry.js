@@ -22,7 +22,7 @@
 
   function getGap() {
     // keep in sync with CSS (16/18 on wide can be handled later)
-    return 16;
+    return 24;
   }
 
   function scheduleLayout() {
