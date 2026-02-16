@@ -1921,6 +1921,10 @@ body.local-dev .tweet-delete-btn {
     .numbered-pagination {
         padding: 0 16px;
     }
+
+    .pagination-info {
+        display: none;
+    }
 }
 
 /* ==========================================================================
@@ -2061,13 +2065,13 @@ html[data-theme="dark"] body::before {
 .header::before {
     content: "";
     position: absolute;
-    left: 14px;
-    right: 14px;
-    top: 0;
-    height: 1px;
+    left: 16px;
+    right: 16px;
+    top: 2px;
+    height: 0px;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--accent-3), var(--accent-color), var(--accent-2));
-    opacity: 0.85;
+    background: linear-gradient(90deg, rgba(244, 114, 182, 0.4), rgba(37, 99, 235, 0.35), rgba(45, 212, 191, 0.35));
+    opacity: 0.2;
 }
 
 .header::after {
@@ -2076,12 +2080,13 @@ html[data-theme="dark"] body::before {
     left: 14px;
     right: 14px;
     top: 0;
-    height: 22px;
-    background: radial-gradient(120px 18px at 22% 0%, color-mix(in oklab, var(--accent-3) 34%, transparent), transparent 70%),
-        radial-gradient(160px 18px at 62% 0%, color-mix(in oklab, var(--accent-color) 28%, transparent), transparent 72%),
-        radial-gradient(140px 18px at 92% 0%, color-mix(in oklab, var(--accent-2) 24%, transparent), transparent 72%);
+    height: 12px;
+    border-radius: 999px;
+    background: linear-gradient(120deg, rgba(244, 114, 182, 0.28), rgba(37, 99, 235, 0.24), rgba(45, 212, 191, 0.22));
+    opacity: 0.7;
+    filter: blur(0.5px);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
     pointer-events: none;
-    opacity: 0.9;
 }
 
 .header-controls {
@@ -2264,6 +2269,6 @@ html[data-theme="dark"] .tweet:hover {
     }
 
     .posts .tweet {
-        margin-bottom: 22px;
+        margin-bottom: 32px;
     }
 }
