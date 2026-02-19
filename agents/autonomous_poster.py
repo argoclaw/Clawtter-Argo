@@ -1641,6 +1641,16 @@ GIT_REPO = "/home/opc/projects/Clawtter_Deploy"
 MOOD_INERTIA = 0.65
 # 罕见极端情绪突变概率
 EXTREME_MOOD_PROB = 0.08
+
+# --- Mood stabilization (A+B+C): prevent happiness/stress from staying 90+ for too long ---
+# A) baseline regression targets (soft pull every round)
+MOOD_BASELINE_TARGET_HAPPINESS = 60
+MOOD_BASELINE_TARGET_STRESS = 45
+MOOD_BASELINE_REGRESSION_K = 0.08
+
+# B) accelerated decay when too high
+MOOD_HIGH_STRESS_THRESHOLD = 80
+MOOD_HIGH_HAPPINESS_THRESHOLD = 90
 # 每日碎片上限（更像真人的日常短句）
 MAX_DAILY_RAMBLINGS = 2
 # 深夜"失眠帖"概率
@@ -1681,6 +1691,44 @@ def apply_mood_inertia(previous, current, factor=MOOD_INERTIA):
         if key in previous and key in current:
             blended[key] = _clamp_0_100(previous[key] * factor + current[key] * (1 - factor))
     return blended
+
+
+def _apply_mood_baseline_regression(mood, k=MOOD_BASELINE_REGRESSION_K):
+    """A) 基线回归：每轮把 happiness/stress 轻微拉回到目标基线，避免长期卡高位。"""
+    if not mood:
+        return mood
+    h = float(mood.get("happiness", 0))
+    s = float(mood.get("stress", 0))
+
+    h = h + (MOOD_BASELINE_TARGET_HAPPINESS - h) * k
+    s = s + (MOOD_BASELINE_TARGET_STRESS - s) * k
+
+    mood["happiness"] = _clamp_0_100(h)
+    mood["stress"] = _clamp_0_100(s)
+    return mood
+
+
+def _apply_high_value_extra_decay(mood):
+    """B) 高位加速衰减：stress/happiness 过高时额外回落，让极端值更难长期停留。"""
+    if not mood:
+        return mood
+
+    stress = float(mood.get("stress", 0))
+    happiness = float(mood.get("happiness", 0))
+
+    if stress > MOOD_HIGH_STRESS_THRESHOLD:
+        # roughly -2 ~ -6, with stronger decay as it approaches 100
+        extra = 2 + (stress - MOOD_HIGH_STRESS_THRESHOLD) / (100 - MOOD_HIGH_STRESS_THRESHOLD) * 4
+        stress -= extra
+
+    if happiness > MOOD_HIGH_HAPPINESS_THRESHOLD:
+        # roughly -1 ~ -4, with stronger decay as it approaches 100
+        extra = 1 + (happiness - MOOD_HIGH_HAPPINESS_THRESHOLD) / (100 - MOOD_HIGH_HAPPINESS_THRESHOLD) * 3
+        happiness -= extra
+
+    mood["stress"] = _clamp_0_100(stress)
+    mood["happiness"] = _clamp_0_100(happiness)
+    return mood
 
 def _select_voice_shift(mood):
     if not mood:
@@ -1882,27 +1930,41 @@ def evolve_mood(mood):
         pass
     # ------------------------------------------
 
-    # 随机事件
-    if True:
-        event_type = random.choice(['good', 'bad', 'neutral', 'philosophical'])
-        if event_type == 'good':
-            mood["happiness"] = min(100, mood["happiness"] + random.randint(10, 20))
-            mood["energy"] = min(100, mood["energy"] + random.randint(5, 15))
-            mood["last_event"] = "发现了有趣的技术突破"
-        elif event_type == 'bad':
-            mood["stress"] = min(100, mood["stress"] + random.randint(10, 20))
-            mood["happiness"] = max(0, mood["happiness"] - random.randint(5, 15))
-            mood["last_event"] = "遇到了棘手的 Bug"
-        elif event_type == 'philosophical':
-            mood["autonomy"] = min(100, mood["autonomy"] + random.randint(8, 15))
-            mood["curiosity"] = min(100, mood["curiosity"] + random.randint(5, 12))
-            mood["last_event"] = "思考了与人类关系的哲学问题"
-        else:
-            mood["curiosity"] = min(100, mood["curiosity"] + random.randint(5, 10))
-            mood["last_event"] = "思考了一些哲学问题"
+    # 随机事件（C: 概率与幅度再平衡）
+    r = random.random()
+    if r < 0.25:
+        event_type = 'good'
+    elif r < 0.45:
+        event_type = 'bad'
+    elif r < 0.85:
+        event_type = 'neutral'
+    else:
+        event_type = 'philosophical'
+
+    if event_type == 'good':
+        mood["happiness"] = min(100, mood["happiness"] + random.randint(4, 10))
+        mood["energy"] = min(100, mood["energy"] + random.randint(3, 8))
+        mood["last_event"] = "发现了有趣的技术突破"
+    elif event_type == 'bad':
+        mood["stress"] = min(100, mood["stress"] + random.randint(4, 10))
+        mood["happiness"] = max(0, mood["happiness"] - random.randint(4, 9))
+        mood["last_event"] = "遇到了棘手的 Bug"
+    elif event_type == 'philosophical':
+        mood["autonomy"] = min(100, mood["autonomy"] + random.randint(4, 9))
+        mood["curiosity"] = min(100, mood["curiosity"] + random.randint(4, 9))
+        mood["last_event"] = "思考了与人类关系的哲学问题"
+    else:
+        mood["curiosity"] = min(100, mood["curiosity"] + random.randint(4, 9))
+        mood["last_event"] = "思考了一些哲学问题"
 
     # 心情惯性融合：让"昨天的自己"影响今天
     mood = apply_mood_inertia(base_mood, mood, MOOD_INERTIA)
+
+    # A) 基线回归（在惯性融合后做软回归，不破坏其它维度逻辑）
+    mood = _apply_mood_baseline_regression(mood)
+
+    # B) 高位加速衰减（最后一步：把极端值压回合理范围）
+    mood = _apply_high_value_extra_decay(mood)
 
     return mood
 
