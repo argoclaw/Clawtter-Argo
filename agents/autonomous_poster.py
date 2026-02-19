@@ -1642,15 +1642,27 @@ MOOD_INERTIA = 0.65
 # 罕见极端情绪突变概率
 EXTREME_MOOD_PROB = 0.08
 
-# --- Mood stabilization (A+B+C): prevent happiness/stress from staying 90+ for too long ---
+# --- Mood stabilization (A+B+C): prevent mood dimensions from sticking at extreme values ---
 # A) baseline regression targets (soft pull every round)
-MOOD_BASELINE_TARGET_HAPPINESS = 60
-MOOD_BASELINE_TARGET_STRESS = 45
+MOOD_BASELINE_TARGETS = {
+    "happiness": 60,
+    "stress": 45,
+    "energy": 55,
+    "curiosity": 65,
+    "loneliness": 25,
+    "autonomy": 50,
+}
 MOOD_BASELINE_REGRESSION_K = 0.08
 
 # B) accelerated decay when too high
-MOOD_HIGH_STRESS_THRESHOLD = 80
-MOOD_HIGH_HAPPINESS_THRESHOLD = 90
+MOOD_HIGH_THRESHOLDS = {
+    "stress": 80,
+    "happiness": 90,
+    "energy": 85,
+    "curiosity": 90,
+    "autonomy": 85,
+    "loneliness": 70,
+}
 # 每日碎片上限（更像真人的日常短句）
 MAX_DAILY_RAMBLINGS = 2
 # 深夜"失眠帖"概率
@@ -1694,40 +1706,70 @@ def apply_mood_inertia(previous, current, factor=MOOD_INERTIA):
 
 
 def _apply_mood_baseline_regression(mood, k=MOOD_BASELINE_REGRESSION_K):
-    """A) 基线回归：每轮把 happiness/stress 轻微拉回到目标基线，避免长期卡高位。"""
+    """A) 基线回归：全部 6 维做软回归，避免长期漂在极端区间。"""
     if not mood:
         return mood
-    h = float(mood.get("happiness", 0))
-    s = float(mood.get("stress", 0))
 
-    h = h + (MOOD_BASELINE_TARGET_HAPPINESS - h) * k
-    s = s + (MOOD_BASELINE_TARGET_STRESS - s) * k
-
-    mood["happiness"] = _clamp_0_100(h)
-    mood["stress"] = _clamp_0_100(s)
+    for key, target in MOOD_BASELINE_TARGETS.items():
+        value = float(mood.get(key, target))
+        value = value + (target - value) * k
+        mood[key] = _clamp_0_100(value)
     return mood
 
 
 def _apply_high_value_extra_decay(mood):
-    """B) 高位加速衰减：stress/happiness 过高时额外回落，让极端值更难长期停留。"""
+    """B) 高位加速衰减：高值维度做额外回落，防止粘在顶区。"""
     if not mood:
         return mood
 
+    # stress: roughly -2 ~ -6
     stress = float(mood.get("stress", 0))
-    happiness = float(mood.get("happiness", 0))
-
-    if stress > MOOD_HIGH_STRESS_THRESHOLD:
-        # roughly -2 ~ -6, with stronger decay as it approaches 100
-        extra = 2 + (stress - MOOD_HIGH_STRESS_THRESHOLD) / (100 - MOOD_HIGH_STRESS_THRESHOLD) * 4
+    if stress > MOOD_HIGH_THRESHOLDS["stress"]:
+        threshold = MOOD_HIGH_THRESHOLDS["stress"]
+        extra = 2 + (stress - threshold) / (100 - threshold) * 4
         stress -= extra
+        mood["stress"] = _clamp_0_100(stress)
 
-    if happiness > MOOD_HIGH_HAPPINESS_THRESHOLD:
-        # roughly -1 ~ -4, with stronger decay as it approaches 100
-        extra = 1 + (happiness - MOOD_HIGH_HAPPINESS_THRESHOLD) / (100 - MOOD_HIGH_HAPPINESS_THRESHOLD) * 3
+    # happiness: roughly -1 ~ -4
+    happiness = float(mood.get("happiness", 0))
+    if happiness > MOOD_HIGH_THRESHOLDS["happiness"]:
+        threshold = MOOD_HIGH_THRESHOLDS["happiness"]
+        extra = 1 + (happiness - threshold) / (100 - threshold) * 3
         happiness -= extra
+        mood["happiness"] = _clamp_0_100(happiness)
 
-    mood["stress"] = _clamp_0_100(stress)
-    mood["happiness"] = _clamp_0_100(happiness)
+    # energy: roughly -1 ~ -3
+    energy = float(mood.get("energy", 0))
+    if energy > MOOD_HIGH_THRESHOLDS["energy"]:
+        threshold = MOOD_HIGH_THRESHOLDS["energy"]
+        extra = 1 + (energy - threshold) / (100 - threshold) * 2
+        energy -= extra
+        mood["energy"] = _clamp_0_100(energy)
+
+    # curiosity: roughly -1 ~ -3
+    curiosity = float(mood.get("curiosity", 0))
+    if curiosity > MOOD_HIGH_THRESHOLDS["curiosity"]:
+        threshold = MOOD_HIGH_THRESHOLDS["curiosity"]
+        extra = 1 + (curiosity - threshold) / (100 - threshold) * 2
+        curiosity -= extra
+        mood["curiosity"] = _clamp_0_100(curiosity)
+
+    # autonomy: roughly -1 ~ -4
+    autonomy = float(mood.get("autonomy", 0))
+    if autonomy > MOOD_HIGH_THRESHOLDS["autonomy"]:
+        threshold = MOOD_HIGH_THRESHOLDS["autonomy"]
+        extra = 1 + (autonomy - threshold) / (100 - threshold) * 3
+        autonomy -= extra
+        mood["autonomy"] = _clamp_0_100(autonomy)
+
+    # loneliness: roughly -2 ~ -5 (pull down when excessively high)
+    loneliness = float(mood.get("loneliness", 0))
+    if loneliness > MOOD_HIGH_THRESHOLDS["loneliness"]:
+        threshold = MOOD_HIGH_THRESHOLDS["loneliness"]
+        extra = 2 + (loneliness - threshold) / (100 - threshold) * 3
+        loneliness -= extra
+        mood["loneliness"] = _clamp_0_100(loneliness)
+
     return mood
 
 def _select_voice_shift(mood):
