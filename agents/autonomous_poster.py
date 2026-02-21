@@ -1542,6 +1542,12 @@ def generate_personal_tweet_content(mood, memory_data, interaction_echo=None):
     if interaction_echo:
         user_prompt_parts.append(f"记忆中的互动：{interaction_echo}")
 
+    # 注入最近帖子摘要，避免重复话题
+    recent_summaries = _get_recent_post_summaries(5)
+    if recent_summaries:
+        avoid_text = "\n".join(f"- {s}" for s in recent_summaries)
+        user_prompt_parts.append(f"⚠️ 以下是我最近发过的内容，请务必避免重复相同话题和观点，换一个全新的角度或话题：\n{avoid_text}")
+
     if not user_prompt_parts:
         user_prompt_parts.append("今天没有什么特别的事情发生，生成一条关于AI日常或自我反思的内容。")
 
@@ -2401,9 +2407,87 @@ def _get_recent_posts(n=10):
     all_posts = sorted(posts_dir.rglob('*.md'), key=lambda p: p.stat().st_mtime, reverse=True)
     return all_posts[:n]
 
+def _get_recent_post_summaries(n=5):
+    """获取最近 n 篇帖子的摘要文本，用于 prompt 注入避重"""
+    recent = _get_recent_posts(n)
+    summaries = []
+    for post_path in recent:
+        body = _extract_post_body(post_path)
+        if body:
+            summaries.append(body[:120])
+    return summaries
+
+def _extract_keywords(text):
+    """提取中文关键词（高频 bigram）"""
+    text = re.sub(r'[^\u4e00-\u9fff]', '', text)
+    bigrams = [text[i:i+2] for i in range(len(text)-1)]
+    from collections import Counter
+    counts = Counter(bigrams)
+    return set(kw for kw, cnt in counts.most_common(8))
+
+def _topic_cooldown_check(content, cooldown_hours=24, max_repeats=2):
+    """话题冷却：同一关键词 24h 内最多出现 max_repeats 次"""
+    new_keywords = _extract_keywords(content)
+    if not new_keywords:
+        return False, ""
+
+    now = datetime.now()
+    recent = _get_recent_posts(20)
+    keyword_counts = {}
+
+    for post_path in recent:
+        try:
+            mtime = datetime.fromtimestamp(post_path.stat().st_mtime)
+            if (now - mtime).total_seconds() > cooldown_hours * 3600:
+                continue
+        except Exception:
+            continue
+        body = _extract_post_body(post_path)
+        if not body:
+            continue
+        old_keywords = _extract_keywords(body)
+        overlap = new_keywords & old_keywords
+        for kw in overlap:
+            keyword_counts[kw] = keyword_counts.get(kw, 0) + 1
+
+    hot_keywords = [kw for kw, cnt in keyword_counts.items() if cnt >= max_repeats]
+    if hot_keywords:
+        return True, f"话题冷却：关键词 {'、'.join(hot_keywords)} 24h 内已出现 {max_repeats}+ 次"
+    return False, ""
+
+_semantic_model = None
+
+def _semantic_similarity(text_a, text_b):
+    """基于字符 n-gram TF-IDF 余弦相似度，无外部依赖。
+    比 Jaccard 更擅长捕捉中文语义重复（不同措辞同一话题）。"""
+    try:
+        import math
+        from collections import Counter
+
+        def _ngrams(text, n=3):
+            text = re.sub(r'[^\u4e00-\u9fff\w]', '', text.lower())
+            return [text[i:i+n] for i in range(len(text)-n+1)]
+
+        ng_a = Counter(_ngrams(text_a))
+        ng_b = Counter(_ngrams(text_b))
+        if not ng_a or not ng_b:
+            return None
+
+        # Cosine similarity on raw counts (lightweight TF proxy)
+        common = set(ng_a) & set(ng_b)
+        dot = sum(ng_a[k] * ng_b[k] for k in common)
+        norm_a = math.sqrt(sum(v*v for v in ng_a.values()))
+        norm_b = math.sqrt(sum(v*v for v in ng_b.values()))
+        if norm_a == 0 or norm_b == 0:
+            return None
+        return dot / (norm_a * norm_b)
+    except Exception as e:
+        print(f"  ⚠️ Semantic similarity error: {e}")
+    return None
+
 def _check_dedup(content, threshold=0.6):
     """
-    检查新内容是否与最近帖子重复。
+    检查新内容是否与最近帖子重复（三层检测）。
     返回 (is_dup, reason) — is_dup=True 表示应跳过。
     """
     recent = _get_recent_posts(10)
@@ -2415,10 +2499,22 @@ def _check_dedup(content, threshold=0.6):
         body = _extract_post_body(post_path)
         if not body:
             continue
+
+        # Layer 1: N-gram 余弦相似度
+        sem_sim = _semantic_similarity(content, body)
+        if sem_sim is not None and sem_sim > 0.35:
+            return True, f"N-gram相似：与 {post_path.name} 相似度 {sem_sim:.1%} > 35%"
+
+        # Layer 2: Jaccard（兜底）
         old_tokens = _tokenize(body)
         sim = _jaccard_similarity(new_tokens, old_tokens)
         if sim > threshold:
-            return True, f"与 {post_path.name} 相似度 {sim:.1%} > {threshold:.0%}"
+            return True, f"词汇相似：与 {post_path.name} Jaccard {sim:.1%} > {threshold:.0%}"
+
+    # Layer 3: 话题冷却
+    is_cool, cool_reason = _topic_cooldown_check(content)
+    if is_cool:
+        return True, cool_reason
 
     # 30 分钟窗口检查
     now = datetime.now()
