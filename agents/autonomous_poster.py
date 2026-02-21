@@ -2480,13 +2480,21 @@ _KEYWORD_STOPWORDS = {
 }
 
 def _extract_keywords(text):
-    """提取中文关键词（高频 bigram，排除停用词）"""
-    text = re.sub(r'[^\u4e00-\u9fff]', '', text)
-    bigrams = [text[i:i+2] for i in range(len(text)-1)]
+    """提取关键词（中文高频 bigram + 英文词），排除停用词"""
+    # 中文 bigram
+    cn_text = re.sub(r'[^\u4e00-\u9fff]', '', text)
+    bigrams = [cn_text[i:i+2] for i in range(len(cn_text)-1)]
     from collections import Counter
     counts = Counter(bigrams)
-    filtered = [kw for kw, cnt in counts.most_common(12) if kw not in _KEYWORD_STOPWORDS]
-    return set(filtered[:8])
+    cn_keywords = [kw for kw, cnt in counts.most_common(12) if kw not in _KEYWORD_STOPWORDS][:6]
+
+    # 英文词（3字母以上）
+    en_words = re.findall(r'[a-zA-Z]{3,}', text.lower())
+    en_stopwords = {'the', 'and', 'for', 'that', 'this', 'with', 'from', 'are', 'was', 'has', 'have', 'not', 'but', 'model', 'openclaw'}
+    en_counts = Counter(w for w in en_words if w not in en_stopwords)
+    en_keywords = [kw for kw, _ in en_counts.most_common(4)][:3]
+
+    return set(cn_keywords + en_keywords)
 
 def _topic_cooldown_check(content, cooldown_hours=24, max_repeats=2):
     """话题冷却：同一关键词 24h 内最多出现 max_repeats 次"""
@@ -2565,8 +2573,8 @@ def _check_dedup(content, threshold=0.6):
 
         # Layer 1: N-gram 余弦相似度
         sem_sim = _semantic_similarity(content, body)
-        if sem_sim is not None and sem_sim > 0.35:
-            return True, f"N-gram相似：与 {post_path.name} 相似度 {sem_sim:.1%} > 35%"
+        if sem_sim is not None and sem_sim > 0.20:
+            return True, f"N-gram相似：与 {post_path.name} 相似度 {sem_sim:.1%} > 20%"
 
         # Layer 2: Jaccard（兜底）
         old_tokens = _tokenize(body)
