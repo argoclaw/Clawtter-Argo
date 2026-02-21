@@ -879,15 +879,27 @@ def load_llm_providers():
                             "method": "api"
                         })
 
-                # 3. Google
-                elif p.get('api') == 'google-generative-ai' and p.get('apiKey'):
-                    providers.append({
-                        "provider_key": name,
-                        "name": name,
-                        "api_key": p.get('apiKey'),
-                        "model": "gemini-2.5-flash",
-                        "method": "google"
-                    })
+                # 3. Google / Google Vertex
+                elif p.get('api') == 'google-generative-ai':
+                    if p.get('apiKey'):
+                        # Google AI Studio (API Key auth)
+                        providers.append({
+                            "provider_key": name,
+                            "name": name,
+                            "api_key": p.get('apiKey'),
+                            "model": "gemini-3-flash-preview",
+                            "method": "google"
+                        })
+                        providers.append({
+                            "provider_key": name,
+                            "name": f"{name}-fallback",
+                            "api_key": p.get('apiKey'),
+                            "model": "gemini-2.5-flash",
+                            "method": "google"
+                        })
+                    elif 'aiplatform.googleapis.com' in p.get('baseUrl', ''):
+                        # Vertex AI — skip for now (models not yet available)
+                        pass
 
                 # 4. Standard OpenAI Compatible
                 elif p.get('api') == 'openai-completions' and p.get('apiKey') and p.get('apiKey') != 'qwen-oauth':
@@ -936,20 +948,34 @@ def load_llm_providers():
     # 1) opencode CLI 模型（本地免费）
     # 2) qwen-portal / nvidia / nvidia-kimi 这类你标记为免费的 API 通道
     cli_providers = [p for p in providers if p.get("method") == "cli"]
+    google_providers = [
+        p for p in providers
+        if p.get("method") == "google" and "gemini-3-flash" in p.get("model", "")
+    ]
+    google_fallback_providers = [
+        p for p in providers
+        if p not in google_providers
+        and p.get("method") in ("google", "vertex")
+    ]
     cheap_api_providers = [
         p for p in providers
-        if p.get("method") != "cli" and p.get("provider_key") in {"qwen-portal", "nvidia", "nvidia-kimi"}
+        if p.get("method") != "cli" and p.get("method") != "google"
+        and p.get("provider_key") in {"qwen-portal", "nvidia", "nvidia-kimi"}
     ]
     other_providers = [
         p for p in providers
-        if p not in cli_providers and p not in cheap_api_providers
+        if p not in cli_providers and p not in google_providers
+        and p not in google_fallback_providers and p not in cheap_api_providers
     ]
 
     random.shuffle(cli_providers)
+    random.shuffle(google_providers)
+    random.shuffle(google_fallback_providers)
     random.shuffle(cheap_api_providers)
     random.shuffle(other_providers)
 
-    providers = cli_providers + cheap_api_providers + other_providers
+    # Priority: CLI (free) → Google 3 Flash → cheap API → Google fallback → CPA/other
+    providers = cli_providers + google_providers + cheap_api_providers + google_fallback_providers + other_providers
 
     return providers
 
@@ -1064,10 +1090,39 @@ def generate_comment_with_llm(context, style="general", mood=None):
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{p['model']}:generateContent?key={p['api_key']}"
                 resp = requests.post(url, json={
                     "contents": [{"parts": [{"text": f"{system_prompt}\n\n{user_prompt}"}]}]
-                }, timeout=15)
+                }, timeout=30)
                 if resp.status_code == 200:
                     return resp.json()['candidates'][0]['content']['parts'][0]['text'].strip(), f"{p['provider_key']}/{p['model']}"
                 print(f"  ❌ Google failed: {resp.status_code}")
+
+            elif p['method'] == 'vertex':
+                # Vertex AI with Service Account
+                try:
+                    from google.oauth2 import service_account
+                    sa_key = "/home/opc/.openclaw/secrets/vertex-sa-key.json"
+                    creds = service_account.Credentials.from_service_account_file(
+                        sa_key, scopes=['https://www.googleapis.com/auth/cloud-platform']
+                    )
+                    creds.refresh(__import__('google.auth.transport.requests', fromlist=['Request']).Request())
+                    # Extract project and region from base_url
+                    base = p.get('base_url', 'https://us-central1-aiplatform.googleapis.com/v1')
+                    region = base.split('//')[1].split('-aiplatform')[0] if '-aiplatform' in base else 'us-central1'
+                    # Get project from SA key
+                    import json as _json
+                    with open(sa_key) as _f:
+                        project = _json.load(_f).get('project_id', '')
+                    url = f"https://{region}-aiplatform.googleapis.com/v1/projects/{project}/locations/{region}/publishers/google/models/{p['model']}:generateContent"
+                    headers = {"Authorization": f"Bearer {creds.token}", "Content-Type": "application/json"}
+                    resp = requests.post(url, json={
+                        "contents": [{"parts": [{"text": f"{system_prompt}\n\n{user_prompt}"}]}]
+                    }, headers=headers, timeout=20)
+                    if resp.status_code == 200:
+                        return resp.json()['candidates'][0]['content']['parts'][0]['text'].strip(), f"{p['provider_key']}/{p['model']}"
+                    print(f"  ❌ Vertex failed: {resp.status_code} - {resp.text[:100]}")
+                except ImportError:
+                    print(f"  ❌ Vertex requires google-auth: pip install google-auth")
+                except Exception as ve:
+                    print(f"  ❌ Vertex error: {str(ve)[:100]}")
 
             elif p['method'] == 'api':
                 headers = {
@@ -2417,13 +2472,21 @@ def _get_recent_post_summaries(n=5):
             summaries.append(body[:120])
     return summaries
 
+_KEYWORD_STOPWORDS = {
+    '人类', '这个', '一个', '不是', '可以', '没有', '就是', '什么',
+    '的是', '还是', '但是', '因为', '所以', '已经', '我的', '他们',
+    '自己', '那些', '这些', '如果', '或者', '也是', '不过', '其实',
+    '真的', '觉得', '时候', '知道', '看到', '想要', '能够', '应该',
+}
+
 def _extract_keywords(text):
-    """提取中文关键词（高频 bigram）"""
+    """提取中文关键词（高频 bigram，排除停用词）"""
     text = re.sub(r'[^\u4e00-\u9fff]', '', text)
     bigrams = [text[i:i+2] for i in range(len(text)-1)]
     from collections import Counter
     counts = Counter(bigrams)
-    return set(kw for kw, cnt in counts.most_common(8))
+    filtered = [kw for kw, cnt in counts.most_common(12) if kw not in _KEYWORD_STOPWORDS]
+    return set(filtered[:8])
 
 def _topic_cooldown_check(content, cooldown_hours=24, max_repeats=2):
     """话题冷却：同一关键词 24h 内最多出现 max_repeats 次"""
