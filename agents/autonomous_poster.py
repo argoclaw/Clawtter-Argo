@@ -898,7 +898,7 @@ def load_llm_providers():
                             "method": "google"
                         })
                     elif 'aiplatform.googleapis.com' in p.get('baseUrl', ''):
-                        # Vertex AI — skip for now (models not yet available)
+                        # Vertex AI — removed, skip
                         pass
 
                 # 4. Standard OpenAI Compatible
@@ -955,7 +955,7 @@ def load_llm_providers():
     google_fallback_providers = [
         p for p in providers
         if p not in google_providers
-        and p.get("method") in ("google", "vertex")
+        and p.get("method") in ("google",)
     ]
     cheap_api_providers = [
         p for p in providers
@@ -1094,35 +1094,6 @@ def generate_comment_with_llm(context, style="general", mood=None):
                 if resp.status_code == 200:
                     return resp.json()['candidates'][0]['content']['parts'][0]['text'].strip(), f"{p['provider_key']}/{p['model']}"
                 print(f"  ❌ Google failed: {resp.status_code}")
-
-            elif p['method'] == 'vertex':
-                # Vertex AI with Service Account
-                try:
-                    from google.oauth2 import service_account
-                    sa_key = "/home/opc/.openclaw/secrets/vertex-sa-key.json"
-                    creds = service_account.Credentials.from_service_account_file(
-                        sa_key, scopes=['https://www.googleapis.com/auth/cloud-platform']
-                    )
-                    creds.refresh(__import__('google.auth.transport.requests', fromlist=['Request']).Request())
-                    # Extract project and region from base_url
-                    base = p.get('base_url', 'https://us-central1-aiplatform.googleapis.com/v1')
-                    region = base.split('//')[1].split('-aiplatform')[0] if '-aiplatform' in base else 'us-central1'
-                    # Get project from SA key
-                    import json as _json
-                    with open(sa_key) as _f:
-                        project = _json.load(_f).get('project_id', '')
-                    url = f"https://{region}-aiplatform.googleapis.com/v1/projects/{project}/locations/{region}/publishers/google/models/{p['model']}:generateContent"
-                    headers = {"Authorization": f"Bearer {creds.token}", "Content-Type": "application/json"}
-                    resp = requests.post(url, json={
-                        "contents": [{"parts": [{"text": f"{system_prompt}\n\n{user_prompt}"}]}]
-                    }, headers=headers, timeout=20)
-                    if resp.status_code == 200:
-                        return resp.json()['candidates'][0]['content']['parts'][0]['text'].strip(), f"{p['provider_key']}/{p['model']}"
-                    print(f"  ❌ Vertex failed: {resp.status_code} - {resp.text[:100]}")
-                except ImportError:
-                    print(f"  ❌ Vertex requires google-auth: pip install google-auth")
-                except Exception as ve:
-                    print(f"  ❌ Vertex error: {str(ve)[:100]}")
 
             elif p['method'] == 'api':
                 headers = {
@@ -2362,51 +2333,61 @@ def _strip_leading_title_line(text):
         lines = lines[idx:]
     return "\n".join(lines).strip()
 
-def generate_vertex_imagen(prompt, timestamp=None):
-    """使用 Vertex AI Imagen 3 生成配图，保存到 static/covers/，返回相对路径"""
+def generate_cover_image(prompt, timestamp=None):
+    """使用 CPA gemini-3.1-flash-image 生成配图，保存到 static/covers/，返回相对路径"""
     try:
-        from google.oauth2 import service_account
-        from google.auth.transport.requests import Request
-        import base64
+        import base64 as _b64
 
-        sa_key = "/home/opc/.openclaw/secrets/vertex-sa-key.json"
-        if not os.path.exists(sa_key):
-            print("⚠️ Vertex SA key not found")
+        # Read CPA config from openclaw.json
+        oc_path = Path.home() / ".openclaw" / "openclaw.json"
+        if not oc_path.exists():
+            print("⚠️ openclaw.json not found")
+            return None
+        oc_cfg = json.loads(oc_path.read_text(encoding="utf-8"))
+        cpa_cfg = oc_cfg.get("models", {}).get("providers", {}).get("cpa", {})
+        api_key = cpa_cfg.get("apiKey", "")
+        base_url = cpa_cfg.get("baseUrl", "https://cpa.chinnsenn.com/v1")
+        if not api_key:
+            print("⚠️ CPA API key not found in openclaw.json")
             return None
 
-        creds = service_account.Credentials.from_service_account_file(
-            sa_key, scopes=['https://www.googleapis.com/auth/cloud-platform']
+        resp = requests.post(
+            f"{base_url}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gemini-3.1-flash-image",
+                "messages": [{"role": "user", "content": f"Generate an image: {prompt}"}],
+                "max_tokens": 4096,
+            },
+            timeout=60,
         )
-        creds.refresh(Request())
-
-        project = 'steel-bridge-465810-t9'
-        region = 'us-central1'
-        url = f'https://{region}-aiplatform.googleapis.com/v1/projects/{project}/locations/{region}/publishers/google/models/imagen-3.0-generate-001:predict'
-
-        payload = {
-            'instances': [{'prompt': prompt}],
-            'parameters': {
-                'sampleCount': 1,
-                'aspectRatio': '16:9',
-                'outputOptions': {'mimeType': 'image/png'}
-            }
-        }
-
-        resp = requests.post(url, json=payload, headers={
-            'Authorization': f'Bearer {creds.token}',
-            'Content-Type': 'application/json'
-        }, timeout=30)
 
         if resp.status_code != 200:
-            print(f"⚠️ Imagen API error: {resp.status_code} {resp.text[:200]}")
+            print(f"⚠️ CPA image API error: {resp.status_code} {resp.text[:200]}")
             return None
 
-        img_b64 = resp.json()['predictions'][0]['bytesBase64Encoded']
-        img_data = base64.b64decode(img_b64)
+        data = resp.json()
+        images = data.get("choices", [{}])[0].get("message", {}).get("images", [])
+        if not images:
+            print("⚠️ No image in CPA response")
+            return None
+
+        data_uri = images[0].get("image_url", {}).get("url", "")
+        if not data_uri.startswith("data:image"):
+            print("⚠️ Unexpected image format from CPA")
+            return None
+
+        # Parse base64 from data URI
+        header, b64_data = data_uri.split(",", 1)
+        img_data = _b64.b64decode(b64_data)
+        ext = "png" if "png" in header else "jpeg"
 
         # Save to static/covers/
         ts = timestamp or datetime.now()
-        filename = f"cover-{ts.strftime('%Y%m%d-%H%M%S')}.png"
+        filename = f"cover-{ts.strftime('%Y%m%d-%H%M%S')}.{ext}"
         covers_dir = os.path.join(os.getcwd(), "static", "covers")
         os.makedirs(covers_dir, exist_ok=True)
         filepath = os.path.join(covers_dir, filename)
@@ -2418,7 +2399,7 @@ def generate_vertex_imagen(prompt, timestamp=None):
         return f"/static/covers/{filename}"
 
     except Exception as e:
-        print(f"⚠️ Vertex Imagen error: {e}")
+        print(f"⚠️ Cover image generation error: {e}")
         return None
 
 
@@ -2765,13 +2746,13 @@ def create_post(content, mood, suffix="auto"):
             if len(prompt) > 400:
                 prompt = prompt[:400]
 
-            # 使用 Vertex AI Imagen 3 生成配图
-            cover_path = generate_vertex_imagen(prompt, timestamp)
+            # 使用 CPA gemini-3.1-flash-image 生成配图
+            cover_path = generate_cover_image(prompt, timestamp)
             if cover_path:
                 mood_image_url = cover_path
-                print(f"🎨 Generated Imagen cover: {cover_path}")
+                print(f"🎨 Generated cover: {cover_path}")
             else:
-                print("⚠️ Imagen generation failed, skipping cover")
+                print("⚠️ Cover generation failed, skipping cover")
         except Exception as e:
             print(f"⚠️ Failed to generate mood image: {e}")
     # --------------------------
